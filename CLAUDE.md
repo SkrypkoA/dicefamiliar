@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Project Overview
 
-**Roller Assistant** is an Android application for randomness-based utilities:
+**Dice Familiar** is an Android application for randomness-based utilities:
 
 1. **Random Number Generator** – generate one or more random integers (or decimals) within a user-defined range.
 2. **Pool Picker** – pick one or more random values from a user-defined list (with or without repetition).
@@ -21,14 +21,16 @@ This file provides guidance to Claude Code when working with code in this reposi
 - **Images:** Coil (`coil-compose`) for loading thumbnails
 - **DI:** Hilt
 - **Build:** Gradle Kotlin DSL (`*.gradle.kts`) with a version catalog (`gradle/libs.versions.toml`)
-- **Min SDK:** 26, **Target/Compile SDK:** latest stable
+- **Min SDK:** 24, **Target/Compile SDK:** latest stable
 - **Testing:** JUnit + kotlinx-coroutines-test for logic, Compose UI tests for screens
 
 ## Suggested Project Structure
 
 ```
-app/src/main/java/com/roller/assistant/
+app/src/main/java/com/skrypko/dicefamiliar/
+├── DiceFamiliarApp.kt     # @HiltAndroidApp Application
 ├── MainActivity.kt
+├── di/                    # Hilt modules (RandomSource, DataStore, later Room)
 ├── ui/
 │   ├── navigation/        # NavHost, bottom bar, routes
 │   ├── theme/             # Material 3 theme, colors, typography
