@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">Dice familiar</string>
 
+    <!-- Common -->
+    <string name="action_cancel">Cancel</string>
+
     <!-- Bottom navigation -->
     <string name="tab_number">Number</string>
     <string name="tab_pool">Pool</string>
@@ -10,6 +13,76 @@
     <!-- Placeholder screen titles -->
     <string name="title_number">Random number</string>
     <string name="title_pool">Pools</string>
-    <string name="title_dice">Dice roller</string>
     <string name="title_cards">Card drawer</string>
+
+    <!-- Dice: palette -->
+    <string name="dice_name">d%1$d</string>
+    <string name="dice_add">Add %1$s</string>
+    <string name="dice_remove">Remove one %1$s</string>
+    <string name="dice_badge">×%1$d</string>
+    <plurals name="dice_in_formula">
+        <item quantity="one">%1$d %2$s in formula</item>
+        <item quantity="other">%1$d %2$s in formula</item>
+    </plurals>
+    <string name="dice_custom_label">dN</string>
+    <string name="dice_custom_add">Add a custom die</string>
+    <string name="dice_custom_sides">Number of sides</string>
+    <string name="dice_custom_range">From %1$d to %2$d</string>
+    <string name="dice_custom_confirm">Add</string>
+    <string name="dice_custom_decrease">Fewer sides</string>
+    <string name="dice_custom_increase">More sides</string>
+
+    <!-- Dice: formula -->
+    <string name="dice_formula_label">Formula</string>
+    <string name="dice_formula_placeholder">e.g. 2d6+1d4+3 or 4d6kh3</string>
+    <string name="dice_formula_hint">Tap dice to add, long-press to remove</string>
+    <string name="dice_modifier_minus">−1</string>
+    <string name="dice_modifier_plus">+1</string>
+    <string name="dice_clear">Clear</string>
+    <string name="dice_formula_show">Show formula</string>
+    <string name="dice_formula_hide">Hide formula</string>
+    <string name="dice_panel_hide">Hide dice</string>
+    <string name="dice_panel_show">Show dice</string>
+    <string name="dice_history">Recent rolls</string>
+
+    <!-- Dice: modes -->
+    <string name="dice_mode_normal">Normal</string>
+    <string name="dice_mode_advantage">Advantage</string>
+    <string name="dice_mode_disadvantage">Disadvantage</string>
+
+    <!-- Dice: tray and results -->
+    <string name="dice_roll">Roll dice</string>
+    <string name="dice_swipe_hint">Swipe here to roll</string>
+    <string name="dice_tray_empty">Results appear here</string>
+    <string name="dice_more">+%1$d more</string>
+    <string name="dice_result_kept">d%1$d rolled %2$d</string>
+    <string name="dice_result_dropped">d%1$d rolled %2$d, dropped</string>
+    <string name="dice_recent">Recent rolls</string>
+    <string name="dice_rolling">Rolling…</string>
+
+    <!-- Dice: notation errors -->
+    <string name="dice_error_empty">Add some dice first</string>
+    <string name="dice_error_too_long">Formula is too long</string>
+    <string name="dice_error_unexpected_char">Unexpected character. Use forms like 2d6+3 or 4d6kh3</string>
+    <string name="dice_error_incomplete">Formula is incomplete</string>
+    <string name="dice_error_missing_sides">Add the number of sides after “d”, e.g. d6</string>
+    <string name="dice_error_count">Dice per group must be from 1 to 100</string>
+    <string name="dice_error_sides">Dice must have from 2 to 1000 sides</string>
+    <string name="dice_error_keep">Can’t keep more dice than were rolled</string>
+    <string name="dice_error_constant">Modifier must be at most 10000</string>
+    <string name="dice_error_terms">Too many parts (max 20)</string>
+    <string name="dice_error_total_dice">Too many dice in total (max 200)</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_general">General</string>
+    <string name="settings_section_dice">Dice</string>
+    <string name="settings_sounds">Sounds</string>
+    <string name="settings_sounds_summary">Play sound effects</string>
+    <string name="settings_animations">Animations</string>
+    <string name="settings_animations_summary">When off, results appear instantly</string>
+    <string name="settings_haptics">Haptic feedback</string>
+    <string name="settings_haptics_summary">Vibrate when a result is shown</string>
+    <string name="settings_quick_roll">Quick roll</string>
+    <string name="settings_quick_roll_summary">Show a Roll button instead of swiping to roll</string>
 </resources>

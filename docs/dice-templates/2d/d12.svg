@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<title>d12 2D silhouette template</title>
+<rect width="512" height="512" fill="#ffffff"/>
+<path d="M0 0H512V512H0Z" fill="none" stroke="#bbbbbb" stroke-dasharray="6 6"/>
+<path d="M256.0 10.2 L489.7 180.1 L400.5 454.8 L111.5 454.8 L22.3 180.1 Z" fill="#e3ecfb" stroke="#2f5b9a" stroke-width="3"/>
+<rect x="128.0" y="189.4" width="256.0" height="133.1" fill="none" stroke="#e53935" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="256.0" y="344.6" font-family="sans-serif" font-size="18" fill="#e53935" text-anchor="middle">label safe area (app draws text)</text>
+</svg>

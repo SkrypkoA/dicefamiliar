@@ -13,3 +13,6 @@ data object DiceRoute
 
 @Serializable
 data object CardsRoute
+
+@Serializable
+data object SettingsRoute

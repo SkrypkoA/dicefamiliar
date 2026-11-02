@@ -1,0 +1,355 @@
+package com.skrypko.dicefamiliar.ui.dice
+
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.filled.History
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import kotlin.math.sqrt
+import kotlin.math.ceil
+import androidx.compose.ui.unit.Dp
+import androidx.compose.foundation.layout.BoxWithConstraints
+import com.skrypko.dicefamiliar.R
+import com.skrypko.dicefamiliar.ui.dice.render3d.Dice3DCanvas
+import com.skrypko.dicefamiliar.ui.dice.render3d.Die3D
+import com.skrypko.dicefamiliar.ui.dice.render3d.Percentile
+import com.skrypko.dicefamiliar.ui.dice.skin.DieColors
+import kotlin.math.hypot
+
+private const val MAX_3D_DICE = 12
+private val TRAY_MIN_HEIGHT = 160.dp
+private const val MIN_SWIPE_SPEED = 600f
+
+/**
+ * The roll area. With [swipeToRoll] the user swipes across it to roll; the tumble animation
+ * and the result are shown inside it.
+ */
+@Composable
+fun DiceTray(
+    state: DiceUiState,
+    swipeToRoll: Boolean,
+    onSwipeRoll: (speed: Float) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val animations = state.settings.animationsEnabled
+    var direction by remember { mutableStateOf(Offset(1f, 0f)) }
+    val minDistance = with(LocalDensity.current) { 48.dp.toPx() }
+    val rollLabel = stringResource(R.string.dice_roll)
+    val gestureModifier = if (swipeToRoll) {
+        Modifier
+            .pointerInput(minDistance) {
+                val tracker = VelocityTracker()
+                var drag = Offset.Zero
+                detectDragGestures(
+                    onDragStart = {
+                        tracker.resetTracking()
+                        drag = Offset.Zero
+                    },
+                    onDrag = { change, amount ->
+                        change.consume()
+                        drag += amount
+                        tracker.addPosition(change.uptimeMillis, change.position)
+                    },
+                    onDragEnd = {
+                        val velocity = tracker.calculateVelocity()
+                        val speed = hypot(velocity.x, velocity.y)
+                        if (drag.getDistance() >= minDistance || speed >= MIN_SWIPE_SPEED) {
+                            val length = drag.getDistance()
+                            direction = if (length > 0f) drag / length else Offset(1f, 0f)
+                            onSwipeRoll(speed)
+                        }
+                    },
+                )
+            }
+            .semantics {
+                onClick(label = rollLabel) {
+                    onSwipeRoll(0f)
+                    true
+                }
+                customActions = listOf(CustomAccessibilityAction(rollLabel) { onSwipeRoll(0f); true })
+            }
+    } else {
+        Modifier
+    }
+
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = TRAY_MIN_HEIGHT)
+            .then(gestureModifier),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 2.dp,
+    ) {
+        Box(Modifier.fillMaxSize().padding(12.dp), contentAlignment = Alignment.Center) {
+            val shown = state.pending ?: state.latest
+            when {
+                shown == null && swipeToRoll -> SwipeHint(animations)
+                shown == null -> Text(
+                    stringResource(R.string.dice_tray_empty),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                state.settings.quickRoll -> FlatDice(shown, rolling = state.pending != null, animations, state.rollCount)
+                else -> SolidDice(state, shown, direction)
+            }
+        }
+    }
+}
+
+/** Swipe mode: shaded 3D dice that tumble in the swipe direction and land on the rolled faces. */
+@Composable
+private fun SolidDice(state: DiceUiState, record: RollRecord, direction: Offset) {
+    val rolling = state.pending != null
+    val progress = remember(state.rollCount, rolling) { Animatable(if (rolling) 0f else 1f) }
+    if (rolling) {
+        LaunchedEffect(state.rollCount) {
+            progress.animateTo(1f, tween(state.tumbleMillis, easing = LinearEasing))
+        }
+    }
+    val slots = record.slots()
+    val shown = slots.take(MAX_3D_DICE)
+    val scheme = MaterialTheme.colorScheme
+    val skin = state.skin
+    val resources = LocalContext.current.resources
+    val description = if (rolling) {
+        stringResource(R.string.dice_rolling)
+    } else {
+        record.outcome.groups.flatMap { group -> group.dice.map { group.term.sides to it } }
+            .joinToString(", ") { (sides, die) ->
+                resources.getString(
+                    if (die.kept) R.string.dice_result_kept else R.string.dice_result_dropped,
+                    sides,
+                    die.value,
+                )
+            }
+    }
+    Box(Modifier.fillMaxSize()) {
+        Dice3DCanvas(
+            slots = shown,
+            groupColor = scheme.surfaceVariant,
+            progress = progress.value,
+            directionX = direction.x,
+            directionY = direction.y,
+            durationMs = state.tumbleMillis,
+            skin = skin,
+            colorsFor = { sides ->
+                val die = skin.forSides(sides)
+                DieColors(
+                    fill = die.fill ?: scheme.primaryContainer,
+                    edge = die.edge ?: scheme.primary,
+                    text = die.text ?: scheme.onPrimaryContainer,
+                )
+            },
+            description = description,
+            modifier = Modifier.fillMaxSize(),
+        )
+        if (slots.size > shown.size) {
+            Text(
+                stringResource(R.string.dice_more, slots.size - shown.size),
+                modifier = Modifier.align(Alignment.BottomEnd),
+                style = MaterialTheme.typography.labelLarge,
+            )
+        }
+    }
+}
+
+/** Quick-roll mode: flat 2D silhouettes ("?" while rolling, values once shown). */
+@Composable
+private fun FlatDice(record: RollRecord, rolling: Boolean, animated: Boolean, key: Int) {
+    val dice = record.outcome.groups.flatMap { group ->
+        group.dice.map { Die3D(group.term.sides, it.value, it.kept) }
+    }
+    // Chips grow with the tray: as large as fits a near-square grid, between 44 and 112 dp.
+    BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        val cols = ceil(sqrt(dice.size * (maxWidth / maxHeight))).toInt().coerceIn(1, dice.size.coerceAtLeast(1))
+        val rows = ceil(dice.size / cols.toFloat()).toInt().coerceAtLeast(1)
+        val cell = minOf(maxWidth / cols, maxHeight / rows)
+        val chip = (cell * 0.72f).coerceIn(44.dp, 112.dp)
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(chip * 0.2f, Alignment.CenterHorizontally),
+            verticalArrangement = Arrangement.spacedBy(chip * 0.2f, Alignment.CenterVertically),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            dice.forEachIndexed { index, die ->
+                if (rolling) {
+                    RollingFlatDie(die.sides, index, key, chip)
+                } else {
+                    ResultDie(die.sides, die.value, die.kept, animated, delayIndex = index, key = key, size = chip)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RollingFlatDie(sides: Int, index: Int, key: Int, size: Dp) {
+    val spin = remember(key) { Animatable(0f) }
+    LaunchedEffect(key) {
+        spin.animateTo(
+            if (index % 2 == 0) 720f else -720f,
+            infiniteRepeatable(tween(700, easing = LinearEasing)),
+        )
+    }
+    DiceIcon(
+        sides = sides,
+        text = "?",
+        size = size,
+        pairLabels = if (sides == 100) "?" to "?" else null,
+        modifier = Modifier.rotate(spin.value),
+    )
+}
+
+/** One slot per rolled die; a d100 slot holds its tens and units d10s. */
+private fun RollRecord.slots(): List<List<Die3D>> = outcome.groups.flatMap { group ->
+    group.dice.map { Die3D.of(group.term.sides, it.value, it.kept) }
+}
+
+/** Compact "notation = total" line shown under the tray. */
+@Composable
+fun RollSumBar(state: DiceUiState, modifier: Modifier = Modifier, onShowHistory: (() -> Unit)? = null) {
+    val record = state.pending ?: state.latest ?: return
+    val rolling = state.pending != null
+    val total = record.outcome.total
+    val animatedTotal by animateIntAsState(
+        targetValue = total,
+        animationSpec = if (state.settings.animationsEnabled) tween(400) else snap(),
+        label = "sum",
+    )
+    val shownTotal = if (rolling) "…" else animatedTotal.toString()
+    val text = listOfNotNull(record.label, "${record.notation} = $shownTotal").joinToString(" · ")
+    val description = if (rolling) stringResource(R.string.dice_rolling) else "${record.notation} = $total"
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 16.dp, end = if (onShowHistory == null) 16.dp else 0.dp)
+                    .padding(vertical = 10.dp)
+                    .semantics { contentDescription = description },
+            )
+            if (onShowHistory != null) {
+                IconButton(onClick = onShowHistory) {
+                    Icon(
+                        Icons.Filled.History,
+                        contentDescription = stringResource(R.string.dice_history),
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SwipeHint(animated: Boolean) {
+    val shift = if (animated) {
+        val transition = rememberInfiniteTransition(label = "hint")
+        transition.animateFloat(
+            initialValue = -12f,
+            targetValue = 12f,
+            animationSpec = infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+            label = "hintShift",
+        ).value
+    } else {
+        0f
+    }
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(
+            Icons.AutoMirrored.Filled.ArrowForward,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.offset { IntOffset(shift.dp.roundToPx(), 0) },
+        )
+        Text(
+            stringResource(R.string.dice_swipe_hint),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun ResultDie(sides: Int, value: Int, kept: Boolean, animated: Boolean, delayIndex: Int, key: Int, size: Dp) {
+    val appear = remember(key, delayIndex) { Animatable(if (animated) 0f else 1f) }
+    if (animated) {
+        LaunchedEffect(key, delayIndex) {
+            appear.animateTo(1f, tween(220, delayMillis = (delayIndex * 40).coerceAtMost(400)))
+        }
+    }
+    val description = stringResource(
+        if (kept) R.string.dice_result_kept else R.string.dice_result_dropped,
+        sides,
+        value,
+    )
+    DiceIcon(
+        sides = sides,
+        text = if (sides == 10) (value % 10).toString() else value.toString(),
+        pairLabels = if (sides == 100) Percentile.labels(value) else null,
+        size = size,
+        strikeThrough = !kept,
+        modifier = Modifier
+            .scale(appear.value)
+            .alpha(if (kept) appear.value else appear.value * 0.38f)
+            .semantics { contentDescription = description },
+    )
+}
