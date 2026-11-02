@@ -1,4 +1,4 @@
-package com.example.dicefamiliar.ui.theme
+package com.skrypko.dicefamiliar.ui.theme
 
 import android.app.Activity
 import android.os.Build

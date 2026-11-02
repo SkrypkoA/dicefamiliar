@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">Dice familiar</string>
+
+    <!-- Bottom navigation -->
+    <string name="tab_number">Number</string>
+    <string name="tab_pool">Pool</string>
+    <string name="tab_dice">Dice</string>
+    <string name="tab_cards">Cards</string>
+
+    <!-- Placeholder screen titles -->
+    <string name="title_number">Random number</string>
+    <string name="title_pool">Pools</string>
+    <string name="title_dice">Dice roller</string>
+    <string name="title_cards">Card drawer</string>
 </resources>
