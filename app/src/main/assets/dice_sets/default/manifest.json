@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "id": "default",
+  "name": "Default",
+  "style": {
+    "fill": "theme",
+    "edge": "theme",
+    "text": "theme",
+    "edgeWidth": 2
+  },
+  "dice": {}
+}

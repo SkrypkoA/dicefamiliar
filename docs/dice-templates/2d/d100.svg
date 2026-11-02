@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<title>d100 2D template (two d10 kites)</title>
+<rect width="512" height="512" fill="#ffffff"/>
+<path d="M0 0H512V512H0Z" fill="none" stroke="#bbbbbb" stroke-dasharray="6 6"/>
+<rect x="20" y="40" width="472" height="270" rx="135" fill="#eef1f6"/>
+<path d="M179.2 55.9 L292.2 136.0 L292.2 169.0 L179.2 282.0 L66.2 169.0 L66.2 136.0 Z" fill="#e3ecfb" stroke="#2f5b9a" stroke-width="3"/>
+<path d="M332.8 55.9 L445.8 136.0 L445.8 169.0 L332.8 282.0 L219.8 169.0 L219.8 136.0 Z" fill="#e3ecfb" stroke="#2f5b9a" stroke-width="3"/>
+<rect x="128.0" y="363.5" width="256.0" height="71.7" fill="none" stroke="#e53935" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="256.0" y="457.2" font-family="sans-serif" font-size="18" fill="#e53935" text-anchor="middle">caption safe area</text>
+</svg>

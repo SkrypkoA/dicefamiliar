@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.Numbers
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Style
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.skrypko.dicefamiliar.R
@@ -20,4 +21,5 @@ enum class TopLevelDestination(
     POOL(PoolListRoute, PoolListRoute::class, Icons.AutoMirrored.Filled.List, R.string.tab_pool),
     DICE(DiceRoute, DiceRoute::class, Icons.Filled.Casino, R.string.tab_dice),
     CARDS(CardsRoute, CardsRoute::class, Icons.Filled.Style, R.string.tab_cards),
+    SETTINGS(SettingsRoute, SettingsRoute::class, Icons.Filled.Settings, R.string.settings_title),
 }

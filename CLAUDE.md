@@ -30,7 +30,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 app/src/main/java/com/skrypko/dicefamiliar/
 ├── DiceFamiliarApp.kt     # @HiltAndroidApp Application
 ├── MainActivity.kt
-├── di/                    # Hilt modules (RandomSource, DataStore, later Room)
+├── di/                    # Hilt modules (Random, DataStore, repositories, remote actions, dice)
 ├── ui/
 │   ├── navigation/        # NavHost, bottom bar, routes
 │   ├── theme/             # Material 3 theme, colors, typography
@@ -40,15 +40,19 @@ app/src/main/java/com/skrypko/dicefamiliar/
 │   │   ├── edit/          # Edit Pool form, item editor, import/export dialogs
 │   │   └── pick/          # Pick screen
 │   ├── dice/              # Dice roller screen + ViewModel
-│   └── cards/             # Card drawer screen + ViewModel
+│   ├── cards/             # Card drawer screen + ViewModel
+│   ├── settings/          # App-wide Settings screen (gear icon in the top bar)
+│   └── common/            # Shared UI services (SoundPlayer)
 ├── domain/
 │   ├── random/            # RandomSource abstraction (injectable, seedable for tests)
 │   ├── number/            # Number generation logic
 │   ├── pool/              # Pool picking logic, validation, display mode
 │   │   └── io/            # CSV/ZIP read & write, unique-name resolver
-│   ├── dice/              # Dice model, notation parser, roller
-│   └── cards/             # Card, Suit, Rank, Deck
-└── data/                  # DataStore / Room repositories
+│   ├── dice/              # Dice model, notation parser, roller, NotationEditor, DiceRollAction
+│   ├── cards/             # Card, Suit, Rank, Deck
+│   ├── remote/            # Feature-agnostic remote actions (LAN-ready): envelopes, registry, codec
+│   └── settings/          # AppSettings (app-wide preferences)
+└── data/                  # DataStore / Room repositories (settings/, dice/, remote/)
 ```
 
 ## Core Rules
@@ -150,10 +154,17 @@ The display mode is worked out from the whole pool, not item by item. It applies
 - Pure-Kotlin domain helpers, each unit-tested: `CsvItemParser`/`CsvItemWriter`, `UniqueNameResolver` (adds the ` #N` suffix), `PoolValidator`, `PoolArchiveReader`/`PoolArchiveWriter` (ZIP, with zip-slip and size checks).
 
 ### Dice Roller
-- Quick buttons for d4, d6, d8, d10, d12, d20, d100, plus custom dN.
-- Support dice notation: `NdM`, `NdM+K`, `NdM-K`, multiple groups (`2d6+1d4+3`).
-- Show individual results and total; optional advantage/disadvantage (roll 2d20, keep highest/lowest).
-- Roll animation and optional haptic feedback.
+- **Dice palette:** 2D die silhouettes with the name inside (d4 triangle, d6 square, d8 diamond, d10/d100 kite, d12 pentagon, d20 hexagon, custom dN circle). Tapping a die **adds it to the formula**; long-press removes one; a badge shows the count. For dN, the first tap asks for the number of sides: tap the field to type it, swipe up / down on it (or tap the chevrons) to increase / decrease it (2–1000). The dialog has no title. Cancel (outlined) and Add (filled) are buttons of the same size, placed in the bottom corners. Further taps add the same die, and the button shows it as e.g. `d7`. Only one custom value is allowed at a time: to choose another, remove all custom dice (long-press dN) or Clear. Large `−1`/`+1` buttons (centred in the panel) adjust the modifier, and an eraser button of the same size (Clear) empties the formula. Editing logic lives in pure `NotationEditor`.
+- **Notation:** `NdM`, `NdM±K`, multiple groups (`2d6+1d4+3`), keep highest/lowest `kh`/`kl` (`4d6kh3`, `2d20kl`). Case-insensitive, whitespace ignored. Limits (`DiceLimits`): 1–100 dice per group, 2–1000 sides, ≤ 20 terms, ≤ 200 dice total, |modifier| ≤ 10000, ≤ 100 chars. The parser returns `NotationError` codes; the UI maps them to strings.
+- **Normal / Advantage / Disadvantage** are shown only when the formula has exactly one die, of any type (modifiers allowed). They turn `1dN` into `2dNkh1` / `2dNkl1`. The rule is enforced in `RollMode` (domain), and with more dice the roll is normal.
+- **Screen layout:** a collapsible **dice panel** at the top holds the palette, the formula field, the ƒx toggle, the `−1`/`+1` buttons, the eraser (Clear) button and the roll modes. A large chevron under it (no text) toggles it, and the state is persisted. When no dice are selected, the panel always opens on launch. The **dice tray takes all remaining height** (`weight(1f)`), and the 3D and 2D dice scale with it. Below it is the sum bar, with a history button that opens recent rolls in a bottom sheet. The Roll button appears only in Quick roll.
+- **Formula field:** hidden by default and shown or hidden with the ƒx toggle (persisted). When it's off, nothing is drawn: no faded or read-only field.
+- **Rolling:** by default the user **swipes the dice tray** (faster swipe = longer tumble; the result is never affected). With the **Quick roll** setting a Roll button replaces the swipe. The tray has an accessibility "Roll dice" action.
+- **Tray:** with Quick roll **off**, the dice are pseudo-3D (`ui/dice/render3d`: convex meshes, Lambert shading, numbers warped onto faces). They tumble and land on the rolled faces, because the result is decided before the animation (`DiceUiState.pending`). With Quick roll **on**, they're 2D silhouettes. The sum (`notation = total`) is shown in a bar under the tray.
+- **d100** is shown as a percentile pair: a tens d10 (`00`–`90`) plus a units d10 (`0`–`9`), smaller and grouped on one pill so they read as one roll. This applies to the palette icon, the 2D chips and the 3D tray. The result value is still 1–100.
+- **d10** faces read `0`–`9`: a roll of 10 shows `0` but counts as 10. Custom **dN** dice are spheres in 3D.
+- **Animation:** with Quick roll on, the 2D dice spin with "?" faces (no randomness in the UI), then the result chips appear. With animations off, the result is shown instantly. Sound and haptics follow the app settings.
+- **LAN-ready:** rolls go through `DiceRollAction` (`dice.roll`, v1) and `DiceRollHandler` via the shared remote-action layer. The notation string is the wire format; the rolling device re-parses it as untrusted input and owns the randomness.
 
 ### Card Drawer
 - Standard 52-card deck, optional jokers, optional multiple decks.
@@ -161,6 +172,10 @@ The display mode is worked out from the whole pool, not item by item. It applies
 - Deck state survives configuration changes (kept in ViewModel / SavedStateHandle).
 
 ### Shared
+- **Settings** (`AppSettings`, DataStore): sounds, animations, haptic feedback (all on by default) and Quick roll (off). Settings is the fifth tab in the bottom navigation bar. The app has no top app bar and no screen titles, and it **reopens on the last selected tab** (`LastTabRepository` plus `NavigationViewModel`). New feature settings get their own section.
+- **Remote actions** (`domain/remote/`, feature-agnostic, for future LAN play): a feature defines a `RemoteAction<Req, Res>` (`type`, `version`, serializers), implements a `RemoteActionHandler`, and registers it with Hilt `@Provides @IntoSet fun ...(): RemoteActionHandler<*, *>`. `RemoteActionRegistry` dispatches `ActionRequest` → `ActionResponse` (unknown type, wrong version or malformed payload give `REJECTED`). Local actions use `LocalActionExecutor`, which takes the same path a LAN request will. `Participant` (a stable id per device) is the identity. Transport is not implemented yet.
+- **Dice sets** (skins): `assets/dice_sets/<id>/manifest.json` plus optional 2D images, 3D face textures and a font. They are parsed and validated by `DiceSetValidator` (`domain/dice/skin`) and loaded by `DiceSetRepository` with per-field fallback. Only `default` exists and there's no picker yet. Designer requirements and templates are in **`docs/dice-assets.md`** and `docs/dice-templates/` (generated by `tools/gen_dice_templates.py`).
+- **Sounds:** `SoundPlayer` (`ui/common`); assets are in `res/raw` (`dice_roll.ogg` is generated by `tools/gen_dice_sound.py`).
 - History of recent results per feature (clearable).
 - Copy result to clipboard / share.
 - Light & dark theme, accessible content descriptions.
