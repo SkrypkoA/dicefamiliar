@@ -26,6 +26,7 @@ import com.skrypko.dicefamiliar.ui.dice.DiceScreen
 import com.skrypko.dicefamiliar.ui.number.NumberScreen
 import com.skrypko.dicefamiliar.ui.pool.list.PoolListScreen
 import com.skrypko.dicefamiliar.ui.settings.SettingsScreen
+import com.skrypko.dicefamiliar.ui.settings.dicesets.DiceSetEditScreen
 
 /**
  * No top app bar: every section, including Settings, is a tab in the bottom navigation bar.
@@ -43,7 +44,7 @@ fun AppNavHost(
     val currentDestination = backStackEntry?.destination
     val currentTab = TopLevelDestination.entries.firstOrNull { tab ->
         currentDestination?.hierarchy?.any { it.hasRoute(tab.routeClass) } == true
-    }
+    } ?: TopLevelDestination.SETTINGS.takeIf { currentDestination?.hasRoute(DiceSetEditRoute::class) == true }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -78,7 +79,12 @@ fun AppNavHost(
             composable<PoolListRoute> { PoolListScreen() }
             composable<DiceRoute> { DiceScreen() }
             composable<CardsRoute> { CardsScreen() }
-            composable<SettingsRoute> { SettingsScreen() }
+            composable<SettingsRoute> {
+                SettingsScreen(onEditDiceSet = { id -> navController.navigate(DiceSetEditRoute(id)) })
+            }
+            composable<DiceSetEditRoute> {
+                DiceSetEditScreen(onBack = { navController.popBackStack() })
+            }
         }
     }
 }

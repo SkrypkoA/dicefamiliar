@@ -108,8 +108,7 @@ class DiceViewModel @Inject constructor(
             settingsRepository.settings.collect { settings -> _uiState.update { it.copy(settings = settings) } }
         }
         viewModelScope.launch {
-            val skin = diceSets.activeSkin()
-            _uiState.update { it.copy(skin = skin) }
+            diceSets.activeSkin.collect { skin -> _uiState.update { it.copy(skin = skin) } }
         }
         viewModelScope.launch {
             val saved = stateRepository.load()

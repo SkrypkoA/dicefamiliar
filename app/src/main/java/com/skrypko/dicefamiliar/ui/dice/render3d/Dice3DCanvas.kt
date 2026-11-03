@@ -229,6 +229,7 @@ private fun DrawScope.drawDie(
                 drawFaceContent(
                     native, model, f, projected, die, restFace, dieSkin.pips && die.sides == 6,
                     dieSkin.faceTexture3d?.asAndroidBitmap(), typeface, colors.text, alpha * facing, paints,
+                    faceClip = paints.path,
                 )
             }
             native.drawPath(paints.path, paints.edge)
@@ -280,11 +281,17 @@ private fun drawSphere(
         drawFaceContent(
             native, model, restFace, projected, die, restFace, pips = false, texture = null,
             typeface = typeface, textColor = colors.text, alpha = alpha * facing, paints = paints,
+            faceClip = null,
         )
     }
 }
 
-/** Draws texture and number (or pips) in the face's template space, warped onto the projected face. */
+/**
+ * Draws texture and number (or pips) in the face's template space, warped onto the projected face.
+ * The warp is affine (three corners), which is exact for triangles but not under perspective for
+ * faces with more corners (e.g. the long d10 kites), so everything is also clipped to [faceClip],
+ * the face as actually projected on screen.
+ */
 private fun drawFaceContent(
     native: android.graphics.Canvas,
     model: DieModel,
@@ -298,6 +305,7 @@ private fun drawFaceContent(
     textColor: Color,
     alpha: Float,
     paints: DicePaints,
+    faceClip: android.graphics.Path?,
 ) {
     val template = FaceTemplate.of(model, faceIndex)
     for (i in 0 until 3) {
@@ -308,6 +316,7 @@ private fun drawFaceContent(
     }
     if (!paints.matrix.setPolyToPoly(paints.src, 0, paints.dst, 0, 3)) return
     native.save()
+    faceClip?.let { native.clipPath(it) }
     native.concat(paints.matrix)
     if (texture != null) {
         native.save()
