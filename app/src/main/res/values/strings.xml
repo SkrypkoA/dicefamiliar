@@ -363,4 +363,157 @@
     <string name="cards_help_images_text">• PNG, JPG or WebP, portrait 5:7 (for example 500×700 px); larger images are scaled down to 1024 px.\n• Put back.png (or .jpg, .webp) at the top of the ZIP for the card back; without it, the back follows the app theme.\n• Limits: 10 MB per image, 200 MB per ZIP, 1 MB per CSV.</string>
     <string name="cards_help_csv_example" translatable="false">name,value,suit,image\nRam 1,1,Rams,images/rams_01.png\nCrow 13,13,Crows,images/crows_13.png\nRed Joker,Joker,,images/joker_red.png</string>
     <string name="cards_help_zip_tree" translatable="false">my_deck.zip\n├── cards.csv      (optional)\n├── back.png       (optional)\n└── images/\n    ├── rams_01.png\n    └── crows_13.png</string>
+
+    <!-- Pool picker -->
+    <string name="pool_help">How pools work</string>
+    <string name="pool_help_title">Pools</string>
+    <string name="pool_list_empty">No pools yet. Tap + to make one, then add items or import a CSV or ZIP.</string>
+    <string name="pool_new">New pool</string>
+    <string name="pool_edit">Edit %1$s</string>
+    <string name="pool_delete">Delete pool</string>
+    <string name="pool_delete_title">Delete pool?</string>
+    <string name="pool_delete_text">“%1$s” and all its items and images will be deleted.</string>
+    <string name="pool_delete_confirm">Delete</string>
+    <plurals name="pool_items">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
+    <plurals name="pool_items_left">
+        <item quantity="one">%1$s · %2$d left</item>
+        <item quantity="other">%1$s · %2$d left</item>
+    </plurals>
+    <string name="pool_new_title">New pool</string>
+    <string name="pool_edit_title">Edit pool</string>
+    <string name="pool_edit_back">Back</string>
+    <string name="pool_save">Save</string>
+    <string name="pool_name">Pool name</string>
+    <string name="pool_error_name_required">Enter a name for the pool</string>
+    <string name="pool_show_names">Show names</string>
+    <string name="pool_show_names_hint">Off: show the images without names</string>
+    <string name="pool_show_names_disabled">Names are always shown while some items have no image</string>
+    <string name="pool_add_item">Add item</string>
+    <string name="pool_edit_item">Edit item</string>
+    <string name="pool_items_empty">No items yet. Add them one by one, or import a CSV or ZIP.</string>
+    <string name="pool_move_up">Move %1$s up</string>
+    <string name="pool_move_down">Move %1$s down</string>
+    <string name="pool_item_name">Name</string>
+    <string name="pool_error_duplicate">An item named “%1$s” already exists in this pool</string>
+    <string name="pool_error_item_name_required">Enter a name</string>
+    <string name="pool_error_too_many">A pool can have at most 1000 items</string>
+    <string name="pool_error_image">That image can’t be used. Pick a PNG, JPG or WebP up to 10 MB.</string>
+    <string name="pool_item_add_image">Add image</string>
+    <string name="pool_item_replace_image">Replace image</string>
+    <string name="pool_item_remove_image">Remove image</string>
+    <string name="pool_item_color">Colour</string>
+    <string name="pool_item_no_color">No colour</string>
+    <string name="pool_item_color_value">Colour %1$s</string>
+    <string name="pool_item_delete">Delete item</string>
+    <string name="pool_item_done">Done</string>
+    <string name="pool_discard_title">Discard changes?</string>
+    <string name="pool_discard_text">Your changes to this pool haven’t been saved.</string>
+    <string name="pool_discard_confirm">Discard</string>
+    <string name="pool_keep_editing">Keep editing</string>
+    <string name="pool_import">Import</string>
+    <string name="pool_import_title">Import items</string>
+    <string name="pool_import_help">Import formats</string>
+    <string name="pool_import_hint">CSV: one item per line (name[,image,color]). ZIP: items.csv + images/ folder (PNG, JPG, WEBP).</string>
+    <string name="pool_import_choose">Choose file</string>
+    <string name="pool_importing">Reading the file…</string>
+    <plurals name="pool_import_question">
+        <item quantity="one">The pool already has %1$d item. Add the new ones after it, or replace it?</item>
+        <item quantity="other">The pool already has %1$d items. Add the new ones after them, or replace them?</item>
+    </plurals>
+    <string name="pool_import_extend">Extend</string>
+    <string name="pool_import_replace">Replace</string>
+    <string name="pool_import_add">Add</string>
+    <plurals name="pool_images">
+        <item quantity="one">%1$d image</item>
+        <item quantity="other">%1$d images</item>
+    </plurals>
+    <plurals name="pool_imported">
+        <item quantity="one">%1$d item imported</item>
+        <item quantity="other">%1$d items imported</item>
+    </plurals>
+    <plurals name="pool_renamed">
+        <item quantity="one">%1$d renamed</item>
+        <item quantity="other">%1$d renamed</item>
+    </plurals>
+    <plurals name="pool_images_skipped">
+        <item quantity="one">%1$d image skipped</item>
+        <item quantity="other">%1$d images skipped</item>
+    </plurals>
+    <string name="pool_error_not_zip">That file isn’t a CSV or ZIP pool</string>
+    <string name="pool_error_no_items_csv">The ZIP has no items.csv</string>
+    <string name="pool_error_no_items">The file has no items</string>
+    <string name="pool_error_bad_csv">The CSV can’t be read (an unclosed quote?)</string>
+    <string name="pool_error_unsafe">The ZIP has unsafe file paths</string>
+    <string name="pool_error_too_large">The file is too large</string>
+    <string name="pool_error_read">The file can’t be read</string>
+    <string name="pool_export">Export</string>
+    <string name="pool_export_title">Export pool</string>
+    <string name="pool_export_zip">ZIP with images</string>
+    <string name="pool_export_csv">CSV only (no images)</string>
+    <string name="pool_export_csv_only">The items are exported as a CSV file (name, colour).</string>
+    <string name="pool_export_save">Save</string>
+    <string name="pool_export_share_button">Share</string>
+    <string name="pool_export_share">Share pool</string>
+    <string name="pool_exported">Pool exported</string>
+    <string name="pool_export_failed">Export failed</string>
+    <string name="pool_help_csv_title">CSV</string>
+    <string name="pool_help_csv_text">UTF-8, comma-separated, with standard quoting. The header row name,image,color is optional; without it the columns are read in that order. Only name is required. color is #RRGGBB or #AARRGGBB. A plain CSV ignores the image column.</string>
+    <string name="pool_help_csv_example" translatable="false">name,image,color\nApple,images/apple.png,#E53935\nBanana,images/banana.jpg,#FDD835\nCherry,,#8E24AA</string>
+    <string name="pool_help_zip_title">ZIP with images</string>
+    <string name="pool_help_zip_text">items.csv at the top of the ZIP (one wrapper folder is fine); image paths are relative to the ZIP root.</string>
+    <string name="pool_help_zip_tree" translatable="false">pool.zip\n├── items.csv\n└── images/\n    ├── apple.png\n    └── banana.jpg</string>
+    <string name="pool_help_rules_title">Rules</string>
+    <string name="pool_help_rules_text">• Images: PNG, JPG or WebP, up to 10 MB each; larger than 1024 px is scaled down.\n• A missing or unsupported image: the item is imported without it.\n• A name already in the pool (or earlier in the file) gets “ #2”, “ #3”…\n• Up to 1000 items; a ZIP up to 200 MB and 1000 files.\n• If the file can’t be read, the pool stays unchanged.</string>
+    <string name="pool_pick_back">Back to pools</string>
+    <string name="pool_pick_count">How many</string>
+    <string name="pool_allow_repeats">Allow repeats</string>
+    <string name="pool_remove_picked">Remove picked items</string>
+    <plurals name="pool_left">
+        <item quantity="one">%1$d of %2$d left</item>
+        <item quantity="other">%1$d of %2$d left</item>
+    </plurals>
+    <string name="pool_put_back">Put back all</string>
+    <string name="pool_pick">Pick</string>
+    <string name="pool_picking">Picking</string>
+    <string name="pool_pick_hint">Tap Pick</string>
+    <string name="pool_pick_empty">This pool has no items yet</string>
+    <string name="pool_pick_all_out">Every item has been picked. Tap Put back all to start again.</string>
+    <string name="pool_error_count">Enter at least 1</string>
+    <plurals name="pool_error_count_pool">
+        <item quantity="one">Only %1$d item left; allow repeats to pick more</item>
+        <item quantity="other">Only %1$d items left; allow repeats to pick more</item>
+    </plurals>
+    <string name="pool_error_count_max">At most %1$d at once</string>
+    <string name="pool_copy">Copy</string>
+    <string name="pool_copied">Copied</string>
+    <string name="pool_share">Share result</string>
+    <string name="pool_history">Recent picks</string>
+    <string name="pool_history_clear">Clear</string>
+    <string name="help_pool_list_title">Your pools</string>
+    <string name="help_pool_list_text">A pool is a named list of items to pick from. Tap a pool to pick from it (an empty pool opens the editor); tap the pencil to edit it.</string>
+    <string name="help_pool_new_title">New pool</string>
+    <string name="help_pool_new_text">Tap + to make a pool. Give it a name, then add items one by one or import a CSV or ZIP.</string>
+    <string name="help_pool_delete_title">Delete</string>
+    <string name="help_pool_delete_text">Long-press a pool to delete it, with its items and images. You’ll be asked to confirm.</string>
+    <string name="help_pool_items_title">Items</string>
+    <string name="help_pool_items_text">Add item opens the editor: a name (unique in the pool), an optional image and an optional colour. Tap an item to change or delete it; the arrows reorder it. Nothing is saved until you tap Save.</string>
+    <string name="help_pool_names_title">Show names</string>
+    <string name="help_pool_names_text">When every item has an image you can hide the names and show the images alone. While some items have no image, names are always shown.</string>
+    <string name="help_pool_display_title">How items look</string>
+    <string name="help_pool_display_text">No images: names only, on the item’s colour. Some images: a thumbnail (or a placeholder) with the name. The colour frames the image and fills the name label.</string>
+    <string name="help_pool_import_title">Import</string>
+    <string name="help_pool_import_text">The import button reads a CSV (name,image,color) or a ZIP (items.csv + images/). Choose Extend to add the items, or Replace to swap them. Duplicate names get “ #2”, “ #3”…</string>
+    <string name="help_pool_export_title">Export</string>
+    <string name="help_pool_export_text">The export button saves or shares the pool: a ZIP with images, or a CSV with names and colours. An exported file imports back unchanged.</string>
+    <string name="help_pool_pick_title">Pick</string>
+    <string name="help_pool_pick_text">Set How many (type, tap the arrows or swipe the field up and down) and tap Pick. The result is decided at once; the dots are only the reveal.</string>
+    <string name="help_pool_repeats_title">Allow repeats</string>
+    <string name="help_pool_repeats_text">On: the same item can come up more than once, up to 100 picks. Off: every item comes up at most once per pick.</string>
+    <string name="help_pool_remove_title">Remove picked items</string>
+    <string name="help_pool_remove_text">On: picked items are set aside and not picked again (like drawing names from a hat). Put back all returns them. Nothing is deleted.</string>
+    <string name="help_pool_results_title">Results</string>
+    <string name="help_pool_results_text">Copy or share the result as text or as a picture. The history button shows recent picks.</string>
 </resources>

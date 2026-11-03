@@ -23,6 +23,7 @@
 - [Features](#features)
   - [Dice roller](#dice-roller)
   - [Random number generator](#random-number-generator)
+  - [Pool picker](#pool-picker)
   - [Card drawer](#card-drawer)
   - [Themes](#themes)
   - [Settings](#settings)
@@ -32,6 +33,7 @@
   - [Image requirements](#image-requirements)
   - [Try the examples](#try-the-examples)
 - [Custom card decks](#custom-card-decks)
+- [Pool import and export](#pool-import-and-export)
 - [Requirements](#requirements)
 - [Build and run](#build-and-run)
 - [Tests and checks](#tests-and-checks)
@@ -52,7 +54,7 @@
 | ⚙️ **Settings** | ✅ Done |
 | 🎨 **Themes:** Classic, Tavern, Cyberpunk | ✅ Done |
 | 🔢 **Random number generator** | ✅ Done |
-| 📋 Pool picker (named lists with images, CSV/ZIP import & export) | 🚧 Planned |
+| 📋 **Pool picker:** named lists with images and colours, CSV/ZIP import & export | ✅ Done |
 | 🃏 **Card drawer:** 36 / 52 / 54-card decks, custom and uploaded decks | ✅ Done |
 | 📡 LAN play: ask another player's phone to roll | 🚧 Planned (the request/response layer is ready) |
 
@@ -83,6 +85,22 @@
   - **Copy** puts them on the clipboard. **Share** sends them to any app, as text (`7, 42, 13`) or as an image of the numbers on the table.
   - **Recent results** keeps the last 20 in a history sheet, which you can clear.
 - **Sound, haptics and animations** follow the app settings. Every value is equally likely, and the generator uses `SecureRandom`.
+
+### Pool picker
+Pick random items from your own lists: names, people, chores, classes, drinks, anything.
+
+- **Pools:** the Pool tab lists your pools with their item counts. Tap **+** to make one, tap a pool to pick from it (an empty pool opens the editor), tap the pencil to edit it, and long-press to delete it (after a confirmation).
+- **Items:** each item has a name (unique in its pool, ignoring case and spaces), an optional **image** from the photo picker, and an optional **colour** from a palette. Reorder them with the arrows. Nothing is saved until you tap **Save**.
+- **How items look:** names only when no item has an image; a thumbnail and the name when some do. When **every** item has an image, the **Show names** switch can hide the names and show the images alone. The colour frames the image and fills the name label, with black or white text, whichever reads better.
+- **Import:** a CSV (`name,image,color`) or a ZIP (`items.csv` + `images/`). Choose **Extend** or **Replace**. Duplicate names become `Apple #2`, `Apple #3`, …
+- **Export:** a ZIP with images, or a CSV. Save it to a file or share it; it imports back unchanged.
+- **Pick:**
+  - Choose **How many** (type, tap the arrows or swipe the field).
+  - **Allow repeats** lets one item come up more than once, up to 100 picks.
+  - **Remove picked items** sets picked items aside, like drawing names from a hat, until you tap **Put back all**. Nothing is deleted.
+  - The choices are remembered per pool.
+- **Results:** one result is shown large, several as a grid. **Copy**, **Share** (as text or as an image), and **Recent picks** (the last 20, which you can clear).
+- **Sound, haptics and animations** follow the app settings, and the "• • •" reveal never shows random items.
 
 ### Card drawer
 A card table with a **draw pile**, a **discard pile** and **your hand** (a fan at the bottom).
@@ -227,6 +245,28 @@ Images: PNG / JPG / WebP, portrait 5 : 7 (e.g. 500 × 700 px), ≤ 10 MB each; a
 adb push docs/card-examples/omens.zip /sdcard/Download/   # then Settings → Cards → Upload deck
 ```
 
+## Pool import and export
+Import items into a pool in **Edit pool → Import**, from one of two forms:
+
+1. **A CSV:** `name,image,color` (the header is optional; only `name` is required; `color` is `#RRGGBB`). A plain CSV ignores `image`.
+2. **A ZIP:** `items.csv` plus the images it points to (PNG, JPG or WebP, ≤ 10 MB each; a ZIP ≤ 200 MB and 1000 files).
+
+```
+pool.zip
+├── items.csv
+└── images/
+    ├── apple.png
+    └── banana.jpg
+```
+
+**Export** writes the same formats, so an exported pool imports back unchanged. Full guide: **[docs/pool-import.md](docs/pool-import.md)**.
+
+**Examples** in [`docs/pool-examples/`](docs/pool-examples/): `classes.zip` (13 fantasy classes with original emblems and colours) and `drinks.csv` (24 non-alcoholic drinks, names and colours).
+
+```bash
+adb push docs/pool-examples/classes.zip /sdcard/Download/   # then Pool → + → Import
+```
+
 ## Requirements
 - **Android 7.0+** (minSdk 24), targeting API 37
 - To build it:
@@ -272,7 +312,7 @@ export JAVA_HOME=/snap/android-studio/current/jbr   # path depends on how Androi
 | Architecture | MVVM: `ViewModel` + immutable `StateFlow` UI state, single activity |
 | Navigation | Navigation Compose with type-safe routes; a bottom bar with one tab per feature |
 | Dependency injection | Hilt (KSP) |
-| Persistence | DataStore (settings, last-used values, active dice set); app files for user dice sets; Room (planned for pools and history) |
+| Persistence | DataStore (settings, last-used values, active dice set); app files for user dice sets and card decks; Room for pools (`filesDir/pool_images/` for their images) |
 | Images | Coil 3 |
 | Serialization | kotlinx.serialization (used for the LAN wire format) |
 | Build | Gradle Kotlin DSL + version catalog (`gradle/libs.versions.toml`), AGP 9.5 |
@@ -287,14 +327,14 @@ export JAVA_HOME=/snap/android-studio/current/jbr   # path depends on how Androi
 
 ```
 app/src/main/java/com/skrypko/dicefamiliar/
-├── ui/            Compose screens + ViewModels (dice, number, cards, settings, navigation, theme, common)
+├── ui/            Compose screens + ViewModels (dice, number, pool, cards, settings, navigation, theme, common)
 │   └── dice/
 │       └── render3d/   pseudo-3D dice: convex meshes, shading, numbers on faces
-├── domain/        pure Kotlin: dice (parser, roller, editor), number (parser, generator), cards (decks, table, CSV/ZIP import), random, remote, settings
-├── data/          DataStore repositories, the dice-set and card-deck stores
+├── domain/        pure Kotlin: dice (parser, roller, editor), number (parser, generator), pool (picker, validation, display mode, CSV/ZIP), cards (decks, table, CSV/ZIP import), io (shared CSV reader), random, remote, settings
+├── data/          DataStore repositories, the Room pool database, the dice-set and card-deck stores
 └── di/            Hilt modules
-docs/              guides for dice sets and card decks, SVG templates, example packs and decks
-tools/             generators: dice-set templates and examples, example card decks, sounds
+docs/              guides for dice sets, card decks and pools, SVG templates, example packs, decks and pools
+tools/             generators: dice-set templates and examples, example card decks and pools, sounds
 ```
 
 ## Dice notation
@@ -327,6 +367,7 @@ Generators for the app's assets. Run them from the repository root with Python 3
 | `tools/gen_number_sound.py` | the number generator chime `res/raw/number_tick.ogg` | Python 3 + ffmpeg |
 | `tools/gen_card_sounds.py` | card flick and shuffle `res/raw/card_flick.ogg`, `card_shuffle.ogg` | Python 3 + ffmpeg |
 | `tools/gen_card_examples.py` | example decks in `docs/card-examples/` | Python 3 + Pillow |
+| `tools/gen_pool_examples.py` | example pools in `docs/pool-examples/` (`classes.zip`, `drinks.csv`, `classes-preview.png`) | Python 3 + Pillow |
 | `tools/gen_app_icon.py` | the adaptive launcher icon in `res/drawable/` | Python 3 |
 | `tools/render_legacy_icons.sh` | legacy launcher PNGs for API 24–25 in `res/mipmap-*/` | Python 3 + ImageMagick 7 (`magick`) |
 

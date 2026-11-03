@@ -19,3 +19,6 @@ local.properties
 
 # Python bytecode from tools/
 __pycache__/
+
+# Private example pools with third-party art (never committed)
+/local-examples/

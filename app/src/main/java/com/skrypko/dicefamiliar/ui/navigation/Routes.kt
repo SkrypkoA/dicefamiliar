@@ -28,3 +28,11 @@ data object DeckListRoute
 /** Custom deck editor: a null [deckId] creates a new deck. Shown under the Cards tab. */
 @Serializable
 data class CustomDeckRoute(val deckId: String? = null)
+
+/** Edit Pool form: [poolId] 0 creates a new pool. Shown under the Pool tab. */
+@Serializable
+data class PoolEditRoute(val poolId: Long = 0L)
+
+/** Pick screen of one pool. Shown under the Pool tab. */
+@Serializable
+data class PoolPickRoute(val poolId: Long)

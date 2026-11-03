@@ -27,6 +27,8 @@ import com.skrypko.dicefamiliar.ui.cards.DeckListScreen
 import com.skrypko.dicefamiliar.ui.dice.DiceScreen
 import com.skrypko.dicefamiliar.ui.number.NumberScreen
 import com.skrypko.dicefamiliar.ui.pool.list.PoolListScreen
+import com.skrypko.dicefamiliar.ui.pool.edit.PoolEditScreen
+import com.skrypko.dicefamiliar.ui.pool.pick.PoolPickScreen
 import com.skrypko.dicefamiliar.ui.settings.SettingsScreen
 import com.skrypko.dicefamiliar.ui.settings.dicesets.DiceSetEditScreen
 
@@ -50,6 +52,8 @@ fun AppNavHost(
         currentDestination?.hasRoute(DiceSetEditRoute::class) == true -> TopLevelDestination.SETTINGS
         currentDestination?.hasRoute(DeckListRoute::class) == true ||
             currentDestination?.hasRoute(CustomDeckRoute::class) == true -> TopLevelDestination.CARDS
+        currentDestination?.hasRoute(PoolEditRoute::class) == true ||
+            currentDestination?.hasRoute(PoolPickRoute::class) == true -> TopLevelDestination.POOL
         else -> null
     }
 
@@ -83,7 +87,31 @@ fun AppNavHost(
             modifier = Modifier.padding(innerPadding),
         ) {
             composable<NumberRoute> { NumberScreen() }
-            composable<PoolListRoute> { PoolListScreen() }
+            composable<PoolListRoute> {
+                PoolListScreen(
+                    onOpenPool = { pool ->
+                        navController.navigate(if (pool.itemCount == 0) PoolEditRoute(pool.id) else PoolPickRoute(pool.id))
+                    },
+                    onEditPool = { id -> navController.navigate(PoolEditRoute(id)) },
+                    onNewPool = { navController.navigate(PoolEditRoute()) },
+                )
+            }
+            composable<PoolEditRoute> {
+                PoolEditScreen(onDone = { savedId ->
+                    val cameFromList = navController.previousBackStackEntry?.destination?.hasRoute(PoolListRoute::class) == true
+                    navController.popBackStack()
+                    // A new (or empty) pool opened from the list goes straight to Pick once it has items.
+                    if (savedId != null && cameFromList) {
+                        navController.navigate(PoolPickRoute(savedId))
+                    }
+                })
+            }
+            composable<PoolPickRoute> {
+                PoolPickScreen(
+                    onBack = { navController.popBackStack() },
+                    onEdit = { id -> navController.navigate(PoolEditRoute(id)) },
+                )
+            }
             composable<DiceRoute> { DiceScreen() }
             composable<CardsRoute> { CardTableScreen(onOpenDecks = { navController.navigate(DeckListRoute) }) }
             composable<DeckListRoute> {
