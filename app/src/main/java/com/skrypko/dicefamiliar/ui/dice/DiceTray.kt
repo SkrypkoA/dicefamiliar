@@ -17,15 +17,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material.icons.filled.History
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -64,7 +61,6 @@ import com.skrypko.dicefamiliar.ui.theme.themeDiceColors
 import com.skrypko.dicefamiliar.ui.theme.tray.themedTray
 import com.skrypko.dicefamiliar.ui.theme.tray.trayColors
 import com.skrypko.dicefamiliar.R
-import com.skrypko.dicefamiliar.ui.common.ShareMenuButton
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.background
 import com.skrypko.dicefamiliar.ui.dice.render3d.Dice3DCanvas
@@ -268,13 +264,7 @@ private fun RollRecord.slots(): List<List<Die3D>> = outcome.groups.flatMap { gro
 
 /** Compact "notation = total" line shown under the tray. */
 @Composable
-fun RollSumBar(
-    state: DiceUiState,
-    modifier: Modifier = Modifier,
-    onShowHistory: (() -> Unit)? = null,
-    onShareText: (() -> Unit)? = null,
-    onShareImage: (() -> Unit)? = null,
-) {
+fun RollSumBar(state: DiceUiState, modifier: Modifier = Modifier) {
     val record = state.pending ?: state.latest ?: return
     val rolling = state.pending != null
     val total = record.outcome.total
@@ -300,28 +290,9 @@ fun RollSumBar(
                 maxLines = 2,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = 16.dp, end = if (onShowHistory == null && onShareText == null) 16.dp else 0.dp)
-                    .padding(vertical = 10.dp)
+                    .padding(horizontal = 16.dp, vertical = 10.dp)
                     .semantics { contentDescription = description },
             )
-            if (onShareText != null && onShareImage != null) {
-                ShareMenuButton(
-                    contentDescription = stringResource(R.string.dice_share),
-                    onShareText = onShareText,
-                    onShareImage = onShareImage,
-                    enabled = !rolling,
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                )
-            }
-            if (onShowHistory != null) {
-                IconButton(onClick = onShowHistory) {
-                    Icon(
-                        Icons.Filled.History,
-                        contentDescription = stringResource(R.string.dice_history),
-                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                    )
-                }
-            }
         }
     }
 }

@@ -91,9 +91,10 @@ class FakeNumberStateRepository(var state: NumberState = NumberState()) : Number
     override suspend fun load(): NumberState = state
     override suspend fun save(state: NumberState) {
         saves++
-        this.state = state.copy(lastResult = this.state.lastResult)
+        this.state = state.copy(lastResult = this.state.lastResult, panelVisible = this.state.panelVisible)
     }
     override suspend fun saveLastResult(result: NumberResult?) { state = state.copy(lastResult = result) }
+    override suspend fun savePanelVisible(visible: Boolean) { state = state.copy(panelVisible = visible) }
 }
 
 class FakeParticipantRepository(private val self: Participant = Participant("me", "My phone")) :
@@ -265,4 +266,7 @@ class FakePoolPickStateRepository : com.skrypko.dicefamiliar.data.pool.PoolPickS
     override suspend fun load(poolId: Long) = saved[poolId] ?: com.skrypko.dicefamiliar.data.pool.PoolPickState()
     override suspend fun save(poolId: Long, state: com.skrypko.dicefamiliar.data.pool.PoolPickState) { saved[poolId] = state }
     override suspend fun clear(poolId: Long) { saved.remove(poolId) }
+    var panel = true
+    override suspend fun panelVisible() = panel
+    override suspend fun savePanelVisible(visible: Boolean) { panel = visible }
 }

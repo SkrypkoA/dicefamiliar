@@ -61,7 +61,7 @@ class NumberContentTest {
         compose.onNodeWithText("Max").assertIsDisplayed()
         compose.onNodeWithText("100").assertIsDisplayed()
         compose.onNodeWithText("Tap Generate").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Copy result").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Share result").assertIsNotEnabled()
         compose.onNodeWithContentDescription("Fewer decimal places").assertDoesNotExist()
         compose.onNodeWithText("Generate").performClick()
         assertEquals(1, generated)
@@ -132,11 +132,21 @@ class NumberContentTest {
         compose.onNodeWithText("42").assertIsDisplayed()
         compose.onNodeWithText("1 – 100").assertIsDisplayed()
         compose.onNodeWithContentDescription("Recent results").assertIsNotEnabled()
-        compose.onNodeWithContentDescription("Copy result").assertIsEnabled().performClick()
+        compose.onNodeWithContentDescription("Share result").assertIsEnabled().performClick()
+        compose.onNodeWithText("Copy").performClick()
         compose.onNodeWithContentDescription("Share result").performClick()
         compose.onNodeWithText("Share as text").performClick()
         assertEquals(listOf(result), copied)
         assertEquals(listOf(result), shared)
+    }
+
+    @Test
+    fun collapsedPanelHidesTheFormButKeepsShareAndGenerate() {
+        show(NumberUiState(settings = noAnimations, panelVisible = false))
+        compose.onNodeWithText("Min").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Show options").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Share result").assertIsDisplayed()
+        compose.onNodeWithText("Generate").assertIsDisplayed()
     }
 
     @Test

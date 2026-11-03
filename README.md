@@ -25,6 +25,7 @@
   - [Random number generator](#random-number-generator)
   - [Pool picker](#pool-picker)
   - [Card drawer](#card-drawer)
+  - [One layout for every feature](#one-layout-for-every-feature)
   - [Themes](#themes)
   - [Settings](#settings)
 - [Custom dice skins](#custom-dice-skins)
@@ -68,8 +69,8 @@
 - **Results:**
   - The sum appears under the tray, e.g. `2d6+1d4+3 = 13`.
   - Dropped dice are faded.
-  - Recent rolls open from the history button.
-  - **Share** the roll as text (`2d6+1d4+3 = 13 · [3 5] [2]`) or as an image of the dice, in your dice skin, with the total.
+  - Recent rolls open from the history button under the dice panel.
+  - **Share** (under the dice panel) copies the roll, or shares it as text (`2d6+1d4+3 = 13 · [3 5] [2]`) or as an image of the dice, in your dice skin, with the total.
 - **Sound, haptics and animations**, each of which can be switched off.
 - **Dice skins (dice sets):** upload a ZIP pack, or build your own set by uploading an image for each die. See [Custom dice skins](#custom-dice-skins).
 
@@ -82,8 +83,9 @@
 - **Results:**
   - One number is shown large.
   - Several numbers are shown as chips, with their sum.
-  - **Copy** puts them on the clipboard. **Share** sends them to any app, as text (`7, 42, 13`) or as an image of the numbers on the table.
+  - **Share** (under the options) copies them, or sends them to any app as text (`7, 42, 13`) or as an image of the numbers on the table.
   - **Recent results** keeps the last 20 in a history sheet, which you can clear.
+  - The chevron hides the options for a bigger result (remembered).
 - **Sound, haptics and animations** follow the app settings. Every value is equally likely, and the generator uses `SecureRandom`.
 
 ### Pool picker
@@ -99,7 +101,7 @@ Pick random items from your own lists: names, people, chores, classes, drinks, a
   - **Allow repeats** lets one item come up more than once, up to 100 picks.
   - **Remove picked items** sets picked items aside, like drawing names from a hat, until you tap **Put back all**. Nothing is deleted.
   - The choices are remembered per pool.
-- **Results:** one result is shown large, several as a grid. **Copy**, **Share** (as text or as an image), and **Recent picks** (the last 20, which you can clear).
+- **Results:** one result is shown large, several as a grid. **Share** (copy, as text or as an image) and **Recent picks** (the last 20, which you can clear) sit under the options; the chevron hides the options (remembered).
 - **Sound, haptics and animations** follow the app settings, and the "• • •" reveal never shows random items.
 
 ### Card drawer
@@ -120,13 +122,16 @@ A card table with a **draw pile**, a **discard pile** and **your hand** (a fan a
 
 - **Classic card faces:** number cards show the right number of suit symbols in the traditional layout, and Jacks, Queens and Kings have their own (original) double-headed portraits.
 - **Moving never shuffles:** cards, the hand and the discard pile dropped on a pile go on top of it, with the card sound; while several cards move they show as a small pile under your finger. Shuffle with a long-press.
-- **Top bar:** the deck list, **Share** (your hand as text or as a picture), the buttons toggle and Reset. The chevron under it hides the bar for more room (remembered), like the dice panel.
+- **Top bar:** the deck list, the buttons toggle and Reset. Under it, **Share** (copy your hand, or share it as text or as a picture) and the chevron that hides the bar for more room (remembered).
 - Nothing spills over the table's edge: cards are clipped at the border (inside the wooden rim in Tavern).
 - **Buttons instead of gestures:** the hand-pointer icon at the top shows a button for every action (remembered).
 - **Reset** shuffles every card back into the deck. **?** explains everything on the screen.
 - **Decks** (the cards icon at the top left): **36** (6–A), **52** and **54** cards (with two jokers), **custom decks** you pick from the 54 cards (jokers listed first, so they are easy to leave out), and **decks you upload** in Settings → Cards. The last deck you used opens next time; the default is 52 cards.
 - The current deck's table (deck, hand, discard) is kept when you close the app; picking another deck starts it freshly shuffled.
 - Sounds (card flick, riffle shuffle), haptics and animations follow the app settings. The table is green felt in Tavern and a neon grid in Cyberpunk.
+
+### One layout for every feature
+Dice, Number, Pool and Cards share one layout: a collapsible panel on top (inputs and options), then one row with **Share** (copy · as text · as image) and **history** on the left, the **chevron** that hides or shows the panel in the centre, and **?** help on the right; then the tray or table, and the main button at the bottom. Each feature remembers whether its panel is open.
 
 ### Themes
 Pick one in **Settings → Appearance**. Each card shows a small preview of the theme.

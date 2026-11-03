@@ -1,8 +1,6 @@
 package com.skrypko.dicefamiliar.ui.number
 
-import android.content.ClipData
 import android.content.Intent
-import android.os.Build
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.RepeatMode
@@ -34,7 +32,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -71,7 +68,6 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalResources
-import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -95,10 +91,13 @@ import com.skrypko.dicefamiliar.domain.number.NumberLimits
 import com.skrypko.dicefamiliar.domain.number.NumberMode
 import com.skrypko.dicefamiliar.domain.number.NumberResult
 import com.skrypko.dicefamiliar.ui.common.CaptureAsImage
-import com.skrypko.dicefamiliar.ui.common.HelpButton
-import com.skrypko.dicefamiliar.ui.common.ShareMenuButton
 import com.skrypko.dicefamiliar.ui.common.shareImage
+import com.skrypko.dicefamiliar.ui.common.FeatureHandleBar
+import com.skrypko.dicefamiliar.ui.common.FeatureHistory
+import com.skrypko.dicefamiliar.ui.common.FeaturePanel
+import com.skrypko.dicefamiliar.ui.common.FeatureShare
 import com.skrypko.dicefamiliar.ui.common.HelpSheet
+import com.skrypko.dicefamiliar.ui.common.copyText
 import com.skrypko.dicefamiliar.ui.common.HelpTopic
 import com.skrypko.dicefamiliar.ui.common.StepperArrows
 import com.skrypko.dicefamiliar.ui.common.StepperNumberField
@@ -164,10 +163,8 @@ fun NumberScreen(viewModel: NumberViewModel = hiltViewModel()) {
             onClearHistory = viewModel::clearHistory,
             onCopy = { result ->
                 scope.launch {
-                    val clip = ClipData.newPlainText(resources.getString(R.string.title_number), result.text)
-                    clipboard.setClipEntry(clip.toClipEntry())
                     // Android 13+ confirms clipboard copies itself.
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                    if (copyText(clipboard, resources.getString(R.string.title_number), result.text)) {
                         snackbar.showSnackbar(resources.getString(R.string.number_copied))
                     }
                 }
@@ -181,6 +178,7 @@ fun NumberScreen(viewModel: NumberViewModel = hiltViewModel()) {
             onShareImage = { image ->
                 scope.launch { shareImage(context, image, "numbers.png", resources.getString(R.string.number_share)) }
             },
+            onTogglePanel = viewModel::togglePanel,
         )
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
     }
@@ -207,8 +205,10 @@ fun NumberContent(
     onCopy: (NumberResult) -> Unit = {},
     onShare: (NumberResult) -> Unit = {},
     onShareImage: (ImageBitmap) -> Unit = {},
+    onTogglePanel: () -> Unit = {},
 ) {
     var showHistory by rememberSaveable { mutableStateOf(false) }
+    var showHelp by rememberSaveable { mutableStateOf(false) }
     var capturing by remember { mutableStateOf(false) }
     val older = state.recent.drop(1)
     // "Share as image": the latest result is rendered off screen, captured once, then shared.
@@ -225,6 +225,7 @@ fun NumberContent(
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        FeaturePanel(visible = state.panelVisible, animate = state.settings.animationsEnabled) {
         NumberForm(
             state = state,
             onMinChange = onMinChange,
@@ -238,14 +239,25 @@ fun NumberContent(
             onDecimalsChange = onDecimalsChange,
             modifier = Modifier.offset { IntOffset(fieldShake.dp.roundToPx(), 0) },
         )
-        ResultArea(
-            state = state,
-            onCopy = onCopy,
-            onShare = onShare,
-            onShareImage = { capturing = true },
-            onShowHistory = if (older.isNotEmpty()) ({ showHistory = true }) else null,
-            modifier = Modifier.weight(1f).fillMaxWidth(),
+        }
+        val latest = state.latest
+        FeatureHandleBar(
+            panelVisible = state.panelVisible,
+            onTogglePanel = onTogglePanel,
+            hideDescription = stringResource(R.string.number_panel_hide),
+            showDescription = stringResource(R.string.number_panel_show),
+            helpDescription = stringResource(R.string.help_number_button),
+            onHelp = { showHelp = true },
+            share = FeatureShare(
+                description = stringResource(R.string.number_share),
+                onCopy = { latest?.let(onCopy) },
+                onShareText = { latest?.let(onShare) },
+                onShareImage = { capturing = true },
+                enabled = latest != null && !state.isGenerating,
+            ),
+            history = FeatureHistory(stringResource(R.string.number_history), if (older.isNotEmpty()) ({ showHistory = true }) else null),
         )
+        ResultArea(state = state, modifier = Modifier.weight(1f).fillMaxWidth())
         Button(
             onClick = onGenerate,
             enabled = !state.isGenerating,
@@ -256,6 +268,7 @@ fun NumberContent(
             Text(stringResource(R.string.number_generate), style = MaterialTheme.typography.titleMedium)
         }
     }
+    if (showHelp) HelpSheet(R.string.help_number_title, NUMBER_HELP, onDismiss = { showHelp = false })
     if (showHistory && older.isNotEmpty()) {
         ModalBottomSheet(onDismissRequest = { showHistory = false }) {
             Column(
@@ -429,17 +442,8 @@ private fun DecimalsStepper(decimals: Int, onChange: (Int) -> Unit) {
 }
 
 @Composable
-private fun ResultArea(
-    state: NumberUiState,
-    onCopy: (NumberResult) -> Unit,
-    onShare: (NumberResult) -> Unit,
-    onShareImage: () -> Unit,
-    onShowHistory: (() -> Unit)?,
-    modifier: Modifier = Modifier,
-) {
+private fun ResultArea(state: NumberUiState, modifier: Modifier = Modifier) {
     val latest = state.latest
-    var showHelp by rememberSaveable { mutableStateOf(false) }
-    if (showHelp) HelpSheet(R.string.help_number_title, NUMBER_HELP, onDismiss = { showHelp = false })
     val shape = MaterialTheme.shapes.extraLarge
     val colors = trayColors()
     Surface(
@@ -455,23 +459,9 @@ private fun ResultArea(
                     latest?.let { rangeCaption(it) }.orEmpty(),
                     style = MaterialTheme.typography.labelLarge,
                     color = colors.muted,
-                    modifier = Modifier.weight(1f).padding(start = 8.dp),
+                    modifier = Modifier.weight(1f).padding(horizontal = 8.dp, vertical = 4.dp),
                     maxLines = 2,
                 )
-                val actionsEnabled = latest != null && !state.isGenerating
-                IconButton(onClick = { latest?.let(onCopy) }, enabled = actionsEnabled) {
-                    Icon(Icons.Filled.ContentCopy, contentDescription = stringResource(R.string.number_copy))
-                }
-                ShareMenuButton(
-                    contentDescription = stringResource(R.string.number_share),
-                    onShareText = { latest?.let(onShare) },
-                    onShareImage = onShareImage,
-                    enabled = actionsEnabled,
-                )
-                IconButton(onClick = { onShowHistory?.invoke() }, enabled = onShowHistory != null) {
-                    Icon(Icons.Filled.History, contentDescription = stringResource(R.string.number_history))
-                }
-                HelpButton(contentDescription = stringResource(R.string.help_number_button), onClick = { showHelp = true })
             }
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 val animate = state.settings.animationsEnabled

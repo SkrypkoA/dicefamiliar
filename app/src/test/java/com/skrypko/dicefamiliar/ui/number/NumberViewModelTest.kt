@@ -189,4 +189,16 @@ class NumberViewModelTest {
         }
         assertEquals(NumberViewModel.MAX_RECENT, vm.uiState.value.recent.size)
     }
+
+    @Test
+    fun panelVisibilityIsRememberedAndSurvivesInputSaves() = runTest(dispatcher) {
+        repo.state = NumberState(panelVisible = false)
+        val vm = viewModel()
+        assertEquals(false, vm.uiState.value.panelVisible)
+        vm.togglePanel()
+        vm.onCountChange("3")
+        advanceUntilIdle()
+        assertEquals(true, vm.uiState.value.panelVisible)
+        assertEquals(true, repo.state.panelVisible)
+    }
 }

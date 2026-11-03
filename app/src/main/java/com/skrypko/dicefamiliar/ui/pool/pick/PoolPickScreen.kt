@@ -1,8 +1,6 @@
 package com.skrypko.dicefamiliar.ui.pool.pick
 
-import android.content.ClipData
 import android.content.Intent
-import android.os.Build
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.RepeatMode
@@ -34,7 +32,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material3.Button
@@ -69,7 +66,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -86,10 +82,13 @@ import com.skrypko.dicefamiliar.domain.pool.PickError
 import com.skrypko.dicefamiliar.domain.pool.PoolDisplayMode
 import com.skrypko.dicefamiliar.domain.pool.PoolLimits
 import com.skrypko.dicefamiliar.ui.common.CaptureAsImage
-import com.skrypko.dicefamiliar.ui.common.HelpButton
+import com.skrypko.dicefamiliar.ui.common.FeatureHandleBar
+import com.skrypko.dicefamiliar.ui.common.FeatureHistory
+import com.skrypko.dicefamiliar.ui.common.FeaturePanel
+import com.skrypko.dicefamiliar.ui.common.FeatureShare
+import com.skrypko.dicefamiliar.ui.common.copyText
 import com.skrypko.dicefamiliar.ui.common.HelpSheet
 import com.skrypko.dicefamiliar.ui.common.HelpTopic
-import com.skrypko.dicefamiliar.ui.common.ShareMenuButton
 import com.skrypko.dicefamiliar.ui.common.StepperArrows
 import com.skrypko.dicefamiliar.ui.common.StepperNumberField
 import com.skrypko.dicefamiliar.ui.common.shareImage
@@ -150,9 +149,7 @@ fun PoolPickScreen(onBack: () -> Unit, onEdit: (Long) -> Unit, viewModel: PoolPi
                 onClearHistory = viewModel::clearHistory,
                 onCopy = { record ->
                     scope.launch {
-                        val clip = ClipData.newPlainText(state.pool?.name.orEmpty(), record.shareText())
-                        clipboard.setClipEntry(clip.toClipEntry())
-                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) snackbar.showSnackbar(resources.getString(R.string.pool_copied))
+                        if (copyText(clipboard, state.pool?.name.orEmpty(), record.shareText())) snackbar.showSnackbar(resources.getString(R.string.pool_copied))
                     }
                 },
                 onShare = { record ->
@@ -163,6 +160,7 @@ fun PoolPickScreen(onBack: () -> Unit, onEdit: (Long) -> Unit, viewModel: PoolPi
                 onShareImage = { image ->
                     scope.launch { shareImage(context, image, "pick.png", resources.getString(R.string.pool_share)) }
                 },
+                onTogglePanel = viewModel::togglePanel,
             ),
         )
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
@@ -186,9 +184,10 @@ data class PoolPickActions(
     val onCopy: (PickRecord) -> Unit = {},
     val onShare: (PickRecord) -> Unit = {},
     val onShareImage: (ImageBitmap) -> Unit = {},
+    val onTogglePanel: () -> Unit = {},
 )
 
-/** Options on top, the result tray in the middle (copy, share, history), Pick at the bottom. */
+/** The collapsible panel (header and options), the handle bar (share, history, chevron, "?"), the result tray, Pick at the bottom. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PoolPickContent(state: PoolPickUiState, actions: PoolPickActions, modifier: Modifier = Modifier, fieldShake: Float = 0f) {
@@ -205,6 +204,8 @@ fun PoolPickContent(state: PoolPickUiState, actions: PoolPickActions, modifier: 
         }) { PickSnapshot(pool.name, latest, mode, state.imageDir) }
     }
     Column(modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        FeaturePanel(visible = state.panelVisible, animate = state.settings.animationsEnabled) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             IconButton(onClick = actions.onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.pool_pick_back))
@@ -213,18 +214,27 @@ fun PoolPickContent(state: PoolPickUiState, actions: PoolPickActions, modifier: 
             IconButton(onClick = actions.onEdit, enabled = pool != null) {
                 Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.pool_edit, pool?.name.orEmpty()))
             }
-            HelpButton(stringResource(R.string.pool_help), onClick = { showHelp = true })
         }
         Options(state, actions, Modifier.offset { IntOffset(fieldShake.dp.roundToPx(), 0) })
-        ResultTray(
-            state = state,
-            mode = mode,
-            onCopy = actions.onCopy,
-            onShare = actions.onShare,
-            onShareImage = { capturing = true },
-            onShowHistory = if (state.recent.size > 1) ({ showHistory = true }) else null,
-            modifier = Modifier.weight(1f).fillMaxWidth(),
+        }
+        }
+        FeatureHandleBar(
+            panelVisible = state.panelVisible,
+            onTogglePanel = actions.onTogglePanel,
+            hideDescription = stringResource(R.string.pool_panel_hide),
+            showDescription = stringResource(R.string.pool_panel_show),
+            helpDescription = stringResource(R.string.pool_help_button),
+            onHelp = { showHelp = true },
+            share = FeatureShare(
+                description = stringResource(R.string.pool_share),
+                onCopy = { latest?.let(actions.onCopy) },
+                onShareText = { latest?.let(actions.onShare) },
+                onShareImage = { capturing = true },
+                enabled = latest != null && !state.isPicking,
+            ),
+            history = FeatureHistory(stringResource(R.string.pool_history), if (state.recent.size > 1) ({ showHistory = true }) else null),
         )
+        ResultTray(state = state, mode = mode, modifier = Modifier.weight(1f).fillMaxWidth())
         Button(
             onClick = actions.onPick,
             enabled = !state.isPicking && state.available.isNotEmpty(),
@@ -326,36 +336,12 @@ private fun countErrorText(error: PickError, state: PoolPickUiState): String = w
 }
 
 @Composable
-private fun ResultTray(
-    state: PoolPickUiState,
-    mode: PoolDisplayMode,
-    onCopy: (PickRecord) -> Unit,
-    onShare: (PickRecord) -> Unit,
-    onShareImage: () -> Unit,
-    onShowHistory: (() -> Unit)?,
-    modifier: Modifier = Modifier,
-) {
+private fun ResultTray(state: PoolPickUiState, mode: PoolDisplayMode, modifier: Modifier = Modifier) {
     val latest = state.latest
     val shape = MaterialTheme.shapes.extraLarge
     val colors = trayColors()
     Surface(modifier.themedTray(shape), shape = shape, color = Color.Transparent, contentColor = colors.content) {
         Column(Modifier.padding(8.dp + LocalThemeStyle.current.tray.contentInset)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Spacer(Modifier.weight(1f))
-                val enabled = latest != null && !state.isPicking
-                IconButton(onClick = { latest?.let(onCopy) }, enabled = enabled) {
-                    Icon(Icons.Filled.ContentCopy, contentDescription = stringResource(R.string.pool_copy))
-                }
-                ShareMenuButton(
-                    contentDescription = stringResource(R.string.pool_share),
-                    onShareText = { latest?.let(onShare) },
-                    onShareImage = onShareImage,
-                    enabled = enabled,
-                )
-                IconButton(onClick = { onShowHistory?.invoke() }, enabled = onShowHistory != null) {
-                    Icon(Icons.Filled.History, contentDescription = stringResource(R.string.pool_history))
-                }
-            }
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 val animate = state.settings.animationsEnabled
                 when {

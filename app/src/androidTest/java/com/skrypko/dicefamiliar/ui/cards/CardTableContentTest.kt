@@ -61,6 +61,7 @@ class CardTableContentTest {
                     actions = actions,
                     onShare = { shared += it },
                     onShareImage = { images += it },
+                    onCopy = { shared += "copy: $it" },
                 )
             }
         }
@@ -200,7 +201,10 @@ class CardTableContentTest {
         show()
         compose.onNodeWithContentDescription("Share hand").performClick()
         compose.onNodeWithText("Share as text").performClick()
-        assertEquals(listOf("52 cards: Jack of Clubs, Queen of Clubs, King of Clubs"), shared)
+        compose.onNodeWithContentDescription("Share hand").performClick()
+        compose.onNodeWithText("Copy").performClick()
+        val hand = "52 cards: Jack of Clubs, Queen of Clubs, King of Clubs"
+        assertEquals(listOf(hand, "copy: $hand"), shared)
         compose.onNodeWithContentDescription("Hide table controls").performClick()
         assertEquals(listOf("panel"), calls)
     }
@@ -216,9 +220,10 @@ class CardTableContentTest {
     }
 
     @Test
-    fun collapsedTopBarHidesItsButtons() {
+    fun collapsedTopBarHidesItsButtonsButKeepsShare() {
         show(panelVisible = false)
-        compose.onNodeWithContentDescription("Share hand").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Choose a deck").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Share hand").assertIsDisplayed()
         compose.onNodeWithContentDescription("Show table controls").assertIsDisplayed()
         compose.onNodeWithContentDescription("How to use the card table").assertIsDisplayed()
     }
