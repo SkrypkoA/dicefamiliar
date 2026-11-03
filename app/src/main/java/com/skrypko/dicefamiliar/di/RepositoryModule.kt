@@ -12,6 +12,10 @@ import com.skrypko.dicefamiliar.data.navigation.DataStoreLastTabRepository
 import com.skrypko.dicefamiliar.data.number.DataStoreNumberStateRepository
 import com.skrypko.dicefamiliar.data.number.NumberStateRepository
 import com.skrypko.dicefamiliar.data.navigation.LastTabRepository
+import com.skrypko.dicefamiliar.data.pool.DataStorePoolPickStateRepository
+import com.skrypko.dicefamiliar.data.pool.PoolPickStateRepository
+import com.skrypko.dicefamiliar.data.pool.PoolRepository
+import com.skrypko.dicefamiliar.data.pool.RoomPoolRepository
 import com.skrypko.dicefamiliar.data.remote.DataStoreParticipantRepository
 import com.skrypko.dicefamiliar.data.remote.ParticipantRepository
 import com.skrypko.dicefamiliar.data.settings.AppSettingsRepository
@@ -40,6 +44,12 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindNumberState(impl: DataStoreNumberStateRepository): NumberStateRepository
+
+    @Binds
+    abstract fun bindPools(impl: RoomPoolRepository): PoolRepository
+
+    @Binds
+    abstract fun bindPoolPickState(impl: DataStorePoolPickStateRepository): PoolPickStateRepository
 
     @Binds
     abstract fun bindParticipant(impl: DataStoreParticipantRepository): ParticipantRepository

@@ -1,9 +1,6 @@
 package com.skrypko.dicefamiliar.ui.settings
 
-import android.content.ContentResolver
 import android.content.res.Resources
-import android.net.Uri
-import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
@@ -60,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.skrypko.dicefamiliar.R
+import com.skrypko.dicefamiliar.ui.common.displayName
 import kotlinx.coroutines.launch
 import com.skrypko.dicefamiliar.data.dice.DiceSetImportOutcome
 import com.skrypko.dicefamiliar.data.dice.DiceSetInfo
@@ -342,13 +340,6 @@ private fun importedMessage(res: Resources, outcome: DiceSetImportOutcome.Import
     ).joinToString(" · ")
 }
 
-private fun displayName(resolver: ContentResolver, uri: Uri): String? = try {
-    resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-        if (cursor.moveToFirst()) cursor.getString(0) else null
-    }
-} catch (e: SecurityException) {
-    null
-}
 
 @Preview(showBackground = true)
 @Composable

@@ -1,5 +1,6 @@
 package com.skrypko.dicefamiliar.domain.cards.io
 
+import com.skrypko.dicefamiliar.domain.io.CsvReader
 import com.skrypko.dicefamiliar.domain.cards.CardFace
 import com.skrypko.dicefamiliar.domain.cards.CardLimits
 

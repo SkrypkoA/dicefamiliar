@@ -63,3 +63,18 @@ suspend fun shareImage(context: Context, image: ImageBitmap, fileName: String, c
 
 private const val CAPTURE_DELAY_MS = 350L
 
+
+/** A file in the cache's shared folder, ready to be written and passed to [shareFile]. */
+fun sharedCacheFile(context: Context, fileName: String): File =
+    File(File(context.cacheDir, "shared").apply { mkdirs() }, fileName)
+
+/** Opens the share sheet for [file] (from [sharedCacheFile]) through the app's FileProvider. */
+fun shareFile(context: Context, file: File, mimeType: String, chooserTitle: String) {
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+    val send = Intent(Intent.ACTION_SEND)
+        .setType(mimeType)
+        .putExtra(Intent.EXTRA_STREAM, uri)
+        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    send.clipData = ClipData.newRawUri(file.name, uri)
+    context.startActivity(Intent.createChooser(send, chooserTitle))
+}

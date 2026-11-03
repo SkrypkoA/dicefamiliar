@@ -1,9 +1,6 @@
 package com.skrypko.dicefamiliar.ui.settings
 
-import android.content.ContentResolver
 import android.content.res.Resources
-import android.net.Uri
-import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -47,6 +44,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.skrypko.dicefamiliar.R
+import com.skrypko.dicefamiliar.ui.common.displayName
 import com.skrypko.dicefamiliar.data.cards.CardDeckImportOutcome
 import com.skrypko.dicefamiliar.data.cards.CardDeckRepository
 import com.skrypko.dicefamiliar.data.cards.DeckInfo
@@ -214,10 +212,3 @@ fun CardDeckImportError.messageRes(): Int = when (this) {
     CardDeckImportError.READ_FAILED -> R.string.cards_error_read
 }
 
-private fun displayName(resolver: ContentResolver, uri: Uri): String? = try {
-    resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-        if (cursor.moveToFirst()) cursor.getString(0) else null
-    }
-} catch (_: SecurityException) {
-    null
-}

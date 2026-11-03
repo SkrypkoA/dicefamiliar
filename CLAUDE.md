@@ -63,7 +63,8 @@ app/src/main/java/com/skrypko/dicefamiliar/
 │   ├── pool/
 │   │   ├── list/          # Pool list screen (+ FAB, edit buttons)
 │   │   ├── edit/          # Edit Pool form, item editor, import/export dialogs
-│   │   └── pick/          # Pick screen
+│   │   ├── pick/          # Pick screen
+│   │   └── common/        # PoolItemView: one renderer for every display mode
 │   ├── dice/              # Dice roller screen + ViewModel
 │   ├── cards/             # Card table, deck list, custom deck editor, PlayingCard
 │   ├── settings/          # App-wide Settings screen; dicesets/ = dice-set editor + help sheet
@@ -71,13 +72,14 @@ app/src/main/java/com/skrypko/dicefamiliar/
 ├── domain/
 │   ├── random/            # RandomSource abstraction (injectable, seedable for tests)
 │   ├── number/            # Number generation logic
-│   ├── pool/              # Pool picking logic, validation, display mode
-│   │   └── io/            # CSV/ZIP read & write, unique-name resolver
+│   ├── pool/              # Pool, PoolPicker, PoolValidator, UniqueNameResolver, ItemColors, PoolDisplayMode
+│   │   └── io/            # CsvItemParser/Writer, PoolArchiveReader/Writer, ImportFileTypes, SafeFileNames
+│   ├── io/                # Shared RFC 4180 CsvReader (pool and card import)
 │   ├── dice/              # Dice model, notation parser, roller, NotationEditor, DiceRollAction
 │   ├── cards/             # CardFace, StandardCards, DeckPresets, CardTable; io/ = CSV + ZIP deck import
 │   ├── remote/            # Feature-agnostic remote actions (LAN-ready): envelopes, registry, codec
 │   └── settings/          # AppSettings (app-wide preferences)
-└── data/                  # DataStore / Room repositories (settings/, dice/, number/, remote/)
+└── data/                  # DataStore / Room repositories (settings/, dice/, number/, cards/, pool/, remote/)
 ```
 
 ## Core Rules
@@ -183,18 +185,42 @@ The display mode is worked out from the whole pool, not item by item. It applies
 |---|---|
 | **No item has an image** | **Names only.** No thumbnail and no empty space for one; the name label uses the item's color as its background. |
 | **At least one item has an image** (but not all) | **Thumbnail + name** for every item. Items without an image show a neutral placeholder (an image icon on a surface-variant background) in the same slot, so rows line up. The thumbnail border uses the item's color. |
-| **Every item has an image** | **Images only**, no names, and each image still uses its border color. The name stays as the image's `contentDescription` for accessibility. |
+| **Every item has an image**, **Show names** on (default) | **Thumbnail + name**. |
+| **Every item has an image**, **Show names** off | **Images only**, no names, and each image still uses its border color. The name stays as the image's `contentDescription` for accessibility. |
 
-- The mode is a computed property of the pool state (`PoolDisplayMode { NAMES_ONLY, THUMBNAIL_AND_NAME, IMAGES_ONLY }`) and is unit-tested.
+- **Show names** is a per-pool flag (`PoolEntity.showNames`, default on), switchable in Edit Pool and on the Pick screen. It can be turned off only when every item has an image (`PoolDisplayMode.canHideNames`); otherwise the switch is disabled with a note.
+- The mode is computed from the pool state (`PoolDisplayMode.of(items, showNames)` → `NAMES_ONLY`, `THUMBNAIL_AND_NAME`, `IMAGES_ONLY`) and is unit-tested. One renderer, `ui/pool/common/PoolItemView` (`PoolItemTile`, `ItemThumbnail`, `ItemNameLabel`), draws every mode.
 
 #### Pick screen
-- Options: number of picks, and with or without replacement. A "remove picked items from pool" option can be toggled.
-- Results are shown with the item's image and color, as described above.
+- **Options:**
+  - **How many** is a `StepperNumberField`: up to the available items, or up to 100 with **Allow repeats**.
+  - **Remove picked items** sets picked items aside (`PoolItemEntity.setAside`, persisted and non-destructive). "N of M left" is shown, and **Put back all** restores them.
+  - The options are remembered per pool in DataStore (`pool.pick.<id>.*`, `PoolPickStateRepository`).
+- **Picking:** `PoolPicker` (domain) uses `nextInt` per pick with repeats, and `RandomSource.shuffle` + take without. The result is decided before the "• • •" reveal; the sound is `NUMBER_GENERATED`, with haptics.
+- **Results** are shown with the item's image and color, as described above: one large, several as a grid.
+- **Copy, share and history:** copy, share as text, or share as image (`PickSnapshot` + `CaptureAsImage`), plus the last 20 picks in memory.
+- **Navigation:** routes `PoolListRoute`, `PoolEditRoute(poolId = 0 → new)` and `PoolPickRoute(poolId)`, all under the Pool tab. Saving a pool opened from the list (if it has items) goes to its Pick screen.
 
 #### Data model (Room)
-- `PoolEntity(id, name, createdAt)`
-- `PoolItemEntity(id, poolId FK cascade, name, nameNormalized, imagePath?, colorArgb?, position)`, with a unique index on `(poolId, nameNormalized)`
-- Pure-Kotlin domain helpers, each unit-tested: `CsvItemParser`/`CsvItemWriter`, `UniqueNameResolver` (adds the ` #N` suffix), `PoolValidator`, `PoolArchiveReader`/`PoolArchiveWriter` (ZIP, with zip-slip and size checks).
+- **Entities:**
+  - `PoolEntity(id, name, createdAt, showNames)`
+  - `PoolItemEntity(id, poolId FK cascade, name, nameNormalized, imagePath?, colorArgb?, position, setAside)`, with a unique index on `(poolId, nameNormalized)`
+  - `AppDatabase` (`data/pool/PoolDatabase.kt`) is version 1, with its schema exported to `app/schemas/`. Bump the version and add a migration for any schema change.
+- **`RoomPoolRepository`:**
+  - `save(pool)` replaces the items in one transaction and deletes images the pool no longer uses.
+  - `delete` also deletes the pool's images.
+  - `readImport` stores the import's images right away; the caller discards them on cancel.
+  - `cleanUpImages()` runs once per process and removes images no pool references.
+- **`PoolImageStore`:** `filesDir/pool_images/<uuid>.<ext>`, scaled to ≤ 1024 px.
+- **The Edit screen works on a draft:** images picked or imported during the edit are deleted if the edit is discarded.
+- **Pure-Kotlin domain helpers** in `domain/pool/` and `domain/pool/io/`, each unit-tested:
+  - `CsvItemParser`/`CsvItemWriter`
+  - `UniqueNameResolver` (adds the ` #N` suffix)
+  - `PoolValidator`, `ItemColors` (palette, parsing, contrast text), `PoolPicker`
+  - `PoolArchiveReader`/`PoolArchiveWriter` (ZIP, with zip-slip and size checks), `SafeFileNames`, `ImportFileTypes`
+- **CSV reading** uses the shared RFC 4180 `domain/io/CsvReader`, which card import uses too.
+- **Examples:** `docs/pool-examples/` (`classes.zip`, `drinks.csv`) come from `tools/gen_pool_examples.py` and are checked by `PoolExamplesTest`. The full spec is in `docs/pool-import.md`.
+- **Private samples:** `local-examples/` is gitignored and holds third-party sample pools for manual checks only. Never commit them or write tests for them.
 
 ### Dice Roller
 - **Dice palette:** 2D die silhouettes with the name inside (d4 triangle, d6 square, d8 diamond, d10/d100 kite, d12 pentagon, d20 hexagon, custom dN circle). Tapping a die **adds it to the formula**; long-press removes one; a badge shows the count. For dN, the first tap asks for the number of sides: tap the field to type it, swipe up / down on it (or tap the chevrons) to increase / decrease it (2–1000). The dialog has no title. Cancel (outlined) and Add (filled) are buttons of the same size, placed in the bottom corners. Further taps add the same die, and the button shows it as e.g. `d7`. Only one custom value is allowed at a time: to choose another, remove all custom dice (long-press dN) or Clear. Large `−1`/`+1` buttons (centred in the panel) adjust the modifier, and an eraser button of the same size (Clear) empties the formula. Editing logic lives in pure `NotationEditor`.
@@ -242,7 +268,7 @@ The display mode is worked out from the whole pool, not item by item. It applies
     - a ZIP with a root `.csv` (`name,value,suit,image`) plus images, **or** images only (natural file order, the name taken from the file)
     - `back.*` is the card back
     - zip-slip rejected; ≤ 1200 entries, ≤ 200 MB unpacked, ≤ 10 MB per image, ≤ 1 MB per CSV
-  - **A plain CSV** gives text cards (`CardCsvParser`, which uses the RFC 4180 `CsvReader` that Pool import can reuse).
+  - **A plain CSV** gives text cards (`CardCsvParser`, which uses the shared RFC 4180 `domain/io/CsvReader`).
   - Images larger than 1024 px are scaled down.
   - Example decks in `docs/card-examples/` come from `tools/gen_card_examples.py` (original art) and are checked by `CardExamplesTest`.
 - **LAN (separate feature, not implemented):** a future `cards.draw` remote action will apply `CardTable.draw()` to the **host's** table and return the drawn `CardFace`.
@@ -270,8 +296,8 @@ The display mode is worked out from the whole pool, not item by item. It applies
   - The user can type, tap the chevrons, or swipe up or down on the field (`DEFAULT_SWIPE_STEP` per step).
   - `arrows` sets where the chevrons go: `ABOVE_BELOW` (up above the field and down below it, as in the dN dialog), `AFTER` (a compact pair right of the field, as in Min/Max/How many) or `BEFORE` (left of the field).
   - The field is stateless. The caller owns the text and decides what one step means; for example, `NumberStepper` and `DiceLimits.stepSides` live in the domain.
-- **Sharing:** every feature shares through `ShareMenuButton` (`ui/common/ShareMenu.kt`, with "Share as text" and "Share as image"). It is used for the dice roll (on the sum bar: `RollRecord.shareText()` and `RollSnapshot`), the number result (`NumberSnapshot`) and the card hand (`HandSnapshot`). Each snapshot shows the result on the theme's tray.
-- **Sharing images:** `ui/common/ShareImage.kt` — `CaptureAsImage` renders any composable off screen into a picture, and `shareImage` saves it in `cache/shared/` and shares it through the app's `FileProvider` (`${applicationId}.files`, `res/xml/file_paths.xml`). Reuse both for any feature that shares a picture.
+- **Sharing:** every feature shares through `ShareMenuButton` (`ui/common/ShareMenu.kt`, with "Share as text" and "Share as image"). It is used for the dice roll (on the sum bar: `RollRecord.shareText()` and `RollSnapshot`), the number result (`NumberSnapshot`), the pool pick (`PickRecord.shareText()` and `PickSnapshot`) and the card hand (`HandSnapshot`). Each snapshot shows the result on the theme's tray.
+- **Sharing images:** `ui/common/ShareImage.kt` — `CaptureAsImage` renders any composable off screen into a picture, and `shareImage` saves it in `cache/shared/` and shares it through the app's `FileProvider` (`${applicationId}.files`, `res/xml/file_paths.xml`). Reuse both for any feature that shares a picture. For other files (e.g. a pool export), write to `sharedCacheFile(context, name)` and send it with `shareFile(context, file, mime, title)`. `displayName(resolver, uri)` (`ui/common/ContentUris.kt`) gives a picked document's file name.
 - **Sounds:** `SoundPlayer` (`ui/common`); assets are in `res/raw` (`dice_roll.ogg` is generated by `tools/gen_dice_sound.py`).
 - History of recent results per feature (clearable).
 - Copy result to clipboard / share.

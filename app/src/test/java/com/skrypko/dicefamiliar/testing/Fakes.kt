@@ -205,3 +205,64 @@ class FakeCardTableRepository : CardTableRepository {
     override val panelVisible: Flow<Boolean> = panel
     override suspend fun setPanelVisible(visible: Boolean) { panel.value = visible }
 }
+
+/** In-memory pools; ids count up from 1, items get ids on save like Room. */
+class FakePoolRepository : com.skrypko.dicefamiliar.data.pool.PoolRepository {
+    val state = MutableStateFlow<Map<Long, com.skrypko.dicefamiliar.domain.pool.Pool>>(emptyMap())
+    val discarded = mutableListOf<String>()
+    var nextImport: com.skrypko.dicefamiliar.data.pool.PoolImportOutcome =
+        com.skrypko.dicefamiliar.data.pool.PoolImportOutcome.Failed(com.skrypko.dicefamiliar.domain.pool.io.PoolImportError.READ_FAILED)
+    var nextImage: String? = "picked.png"
+    val exported = mutableListOf<Pair<List<com.skrypko.dicefamiliar.domain.pool.PoolItem>, Boolean>>()
+    private var nextPoolId = 1L
+    private var nextItemId = 1L
+
+    override val pools: Flow<List<com.skrypko.dicefamiliar.data.pool.PoolSummary>> = state.map { pools ->
+        pools.values.map { pool ->
+            com.skrypko.dicefamiliar.data.pool.PoolSummary(
+                pool.id, pool.name, pool.items.size, pool.items.count { !it.setAside }, pool.items.firstNotNullOfOrNull { it.imagePath },
+            )
+        }
+    }
+
+    override fun observePool(id: Long): Flow<com.skrypko.dicefamiliar.domain.pool.Pool?> = state.map { it[id] }
+    override suspend fun pool(id: Long) = state.value[id]
+
+    override suspend fun save(pool: com.skrypko.dicefamiliar.domain.pool.Pool): Long {
+        val id = if (pool.id == 0L) nextPoolId++ else pool.id
+        state.value = state.value + (id to pool.copy(id = id, items = pool.items.map { it.copy(id = nextItemId++) }))
+        return id
+    }
+
+    override suspend fun delete(id: Long) { state.value = state.value - id }
+
+    override suspend fun setShowNames(id: Long, show: Boolean) = update(id) { it.copy(showNames = show) }
+
+    override suspend fun setAside(poolId: Long, itemIds: Collection<Long>) =
+        update(poolId) { pool -> pool.copy(items = pool.items.map { if (it.id in itemIds) it.copy(setAside = true) else it }) }
+
+    override suspend fun restoreAll(poolId: Long) = update(poolId) { pool -> pool.copy(items = pool.items.map { it.copy(setAside = false) }) }
+
+    override suspend fun storeImage(source: StreamSource): String? = nextImage
+    override suspend fun discardImages(paths: Collection<String>) { discarded += paths }
+    override fun imageFile(path: String) = java.io.File(path)
+    override val imageDir: java.io.File = java.io.File("images")
+    override suspend fun readImport(source: StreamSource, fileName: String?, mime: String?) = nextImport
+
+    override suspend fun export(items: List<com.skrypko.dicefamiliar.domain.pool.PoolItem>, withImages: Boolean, out: java.io.OutputStream) {
+        exported += items to withImages
+    }
+
+    override suspend fun cleanUpImages() = Unit
+
+    private fun update(id: Long, change: (com.skrypko.dicefamiliar.domain.pool.Pool) -> com.skrypko.dicefamiliar.domain.pool.Pool) {
+        state.value[id]?.let { state.value = state.value + (id to change(it)) }
+    }
+}
+
+class FakePoolPickStateRepository : com.skrypko.dicefamiliar.data.pool.PoolPickStateRepository {
+    val saved = mutableMapOf<Long, com.skrypko.dicefamiliar.data.pool.PoolPickState>()
+    override suspend fun load(poolId: Long) = saved[poolId] ?: com.skrypko.dicefamiliar.data.pool.PoolPickState()
+    override suspend fun save(poolId: Long, state: com.skrypko.dicefamiliar.data.pool.PoolPickState) { saved[poolId] = state }
+    override suspend fun clear(poolId: Long) { saved.remove(poolId) }
+}

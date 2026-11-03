@@ -1,4 +1,4 @@
-package com.skrypko.dicefamiliar.domain.cards.io
+package com.skrypko.dicefamiliar.domain.io
 
 /**
  * Minimal RFC 4180 reader: comma-separated, `"` quoting with `""` escapes, quoted line breaks,
