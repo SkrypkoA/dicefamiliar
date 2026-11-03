@@ -67,8 +67,6 @@ fun Dice3DCanvas(
     colorsFor: DieColorsFor,
     description: String,
     modifier: Modifier = Modifier,
-    /** Backdrop that groups the two dice of a d100 so they read as one roll. */
-    groupColor: Color = Color.Transparent,
 ) {
     val paints = remember { DicePaints() }
     Canvas(modifier.semantics { contentDescription = description }) {
@@ -92,18 +90,7 @@ fun Dice3DCanvas(
                 paints = paints,
             )
             if (group.size == 2) {
-                // d100: two smaller d10s close together on a shared pill, moving as one.
-                val eased = DieAnimation.ease(t)
-                val travel = size.width * 0.6f
-                val px = cx - (directionX * travel * (1 - eased)).toFloat()
-                val py = cy - (directionY * travel * (1 - eased)).toFloat()
-                val alpha = if (group.first().kept) 1f else 0.4f
-                drawRoundRect(
-                    color = groupColor.copy(alpha = groupColor.alpha * alpha),
-                    topLeft = androidx.compose.ui.geometry.Offset(px - s * 0.62f, py - s * 0.45f),
-                    size = androidx.compose.ui.geometry.Size(s * 1.24f, s * 0.9f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(s * 0.45f),
-                )
+                // d100: two smaller d10s close together, moving as one (no backdrop).
                 val pair = s * PAIR_SCALE
                 draw(group[1], cx + s * 0.27f, cy + s * 0.05f, pair) // units die, behind
                 draw(group[0], cx - s * 0.27f, cy - s * 0.03f, pair) // tens die, in front
