@@ -60,13 +60,13 @@ The red dashed boxes in the templates mark where the app places text. Areas are 
 | Die | Default shape | Label centre | Notes |
 |---|---|---|---|
 | d4 | triangle, point up | 50% × 64% | the label sits low, where the triangle is wide |
-| d6 | rounded square (14% corners) | centre | |
+| d6 | square, sharp corners (4% margin) | centre | |
 | d8 | diamond | centre | |
-| d10 | kite: point at top, shoulders at 36–50% | 50% × 42% | |
+| d10 | kite: point at top, shoulders at 36–50% | 50% × 42% | the default draws edge lines in the lower half only, to keep the label area clear |
 | d12 | pentagon, point up | centre | |
 | d20 | hexagon, point up | centre | the default draws a faint inner triangle |
 | dN | circle | centre | used for every non-standard die; it's a sphere in 3D |
-| d100 | **two smaller d10 kites side by side** | caption under the kites, 50% × 78% | see 2.3 |
+| d100 | **two smaller d10 kites side by side** | caption under the kites, 50% × 78% | see 2.3; the kites carry no label in the palette, so the default also draws two edges from the top point, splitting the upper half into three faces |
 
 ### 2.3 d100 (percentile)
 

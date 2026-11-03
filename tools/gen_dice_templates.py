@@ -61,7 +61,7 @@ def label_box(cx, cy, w, h, text):
 # ---------- 2D silhouettes (DiceShapes.kt) ----------
 SHAPES_2D = {
     "d4": ([(0.5, 0.04), (0.97, 0.92), (0.03, 0.92)], (0.5, 0.64)),
-    "d6": (None, (0.5, 0.5)),
+    "d6": ([(0.04, 0.04), (0.96, 0.04), (0.96, 0.96), (0.04, 0.96)], (0.5, 0.5)),
     "d8": ([(0.5, 0.02), (0.98, 0.5), (0.5, 0.98), (0.02, 0.5)], (0.5, 0.5)),
     "d10": ([(0.5, 0.02), (0.98, 0.36), (0.98, 0.5), (0.5, 0.98), (0.02, 0.5), (0.02, 0.36)], (0.5, 0.42)),
     "d12": (regular(5, -90), (0.5, 0.5)),
@@ -76,10 +76,7 @@ D100_KITE_TOP = 0.1
 
 def write_2d():
     for key, (shape, (lx, ly)) in SHAPES_2D.items():
-        if shape is None:
-            r = 0.14 * SIZE
-            body = f'<rect x="0" y="0" width="{SIZE}" height="{SIZE}" rx="{r}" fill="#e3ecfb" stroke="#2f5b9a" stroke-width="3"/>\n'
-        elif shape == "circle":
+        if shape == "circle":
             body = f'<circle cx="{SIZE / 2}" cy="{SIZE / 2}" r="{SIZE / 2 - 2}" fill="#e3ecfb" stroke="#2f5b9a" stroke-width="3"/>\n'
         else:
             body = poly([(x * SIZE, y * SIZE) for x, y in shape], **OUTLINE)

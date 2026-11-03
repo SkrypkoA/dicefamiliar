@@ -47,9 +47,7 @@ def shape_mask(key, inset=0.0):
     draw = ImageDraw.Draw(mask)
     shape, _ = SHAPES_2D[key]
     lo, hi = inset * BIG, (1 - inset) * BIG
-    if shape is None:
-        draw.rounded_rectangle([lo, lo, hi, hi], radius=0.14 * BIG * (1 - 2 * inset), fill=255)
-    elif shape == "circle":
+    if shape == "circle":
         draw.ellipse([lo + 2 * SS, lo + 2 * SS, hi - 2 * SS, hi - 2 * SS], fill=255)
     else:
         cx = sum(x for x, _ in shape) / len(shape)
