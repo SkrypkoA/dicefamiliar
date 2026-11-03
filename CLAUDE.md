@@ -199,6 +199,18 @@ The display mode is worked out from the whole pool, not item by item. It applies
 
 **Never commit or push directly to `master`.** All changes reach `master` only through a pull request from a feature branch. Never force-push to `master`.
 
+**Testing while a task runs:** run only the tests related to the issue or feature you are working on. Don't run the whole suite after every change.
+
+```bash
+./gradlew testDebugUnitTest --tests '*NotationEditorTest'            # one class
+./gradlew testDebugUnitTest --tests 'com.skrypko.dicefamiliar.domain.dice.skin.*'   # one package
+./gradlew connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.skrypko.dicefamiliar.ui.dice.DiceContentTest \
+  -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true    # one UI test class; keeps the app and its data installed
+```
+
+**At the end of the task, before creating the pull request,** run everything: `./gradlew test lint`, plus `./gradlew connectedAndroidTest` when UI code changed and a device is connected (add the `leaveApksInstalledAfterRun` flag above so the user's app data survives). All of it must pass before the PR is opened.
+
 When a feature is done, follow these steps in order:
 
 1. **Create a feature branch** named after the feature, e.g. `feature/pool-csv-import`, using kebab-case. If the work is still uncommitted on `master`, create the branch first, so nothing is committed to `master`:
@@ -221,7 +233,7 @@ When a feature is done, follow these steps in order:
    git rebase master
    ```
    - If conflicts come up, resolve them, `git add` the files and run `git rebase --continue`.
-   - Afterwards, run `./gradlew test lint` and make sure they pass.
+   - Afterwards, run the full check (`./gradlew test lint`, and `connectedAndroidTest` when UI changed) and make sure everything passes.
 5. **Only then push the feature branch to the remote.** Use `--force-with-lease` only if the branch was already pushed before:
    ```bash
    git push -u origin feature/<feature-name>
