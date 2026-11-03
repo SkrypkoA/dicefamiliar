@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
@@ -59,7 +58,11 @@ import com.skrypko.dicefamiliar.R
 import com.skrypko.dicefamiliar.domain.dice.NotationError
 import com.skrypko.dicefamiliar.domain.dice.RollMode
 import com.skrypko.dicefamiliar.ui.dice.skin.LocalDiceSkin
+import com.skrypko.dicefamiliar.ui.common.HelpButton
+import com.skrypko.dicefamiliar.ui.common.HelpSheet
+import com.skrypko.dicefamiliar.ui.common.HelpTopic
 import com.skrypko.dicefamiliar.ui.theme.DiceFamiliarTheme
+import com.skrypko.dicefamiliar.ui.theme.LocalThemeStyle
 import kotlinx.coroutines.launch
 
 @Composable
@@ -185,7 +188,7 @@ fun DiceContent(
                     enabled = state.canRoll,
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                 ) {
-                    Icon(Icons.Filled.Casino, contentDescription = null)
+                    Icon(LocalThemeStyle.current.icons.roll, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.dice_roll), style = MaterialTheme.typography.titleMedium)
                 }
@@ -206,10 +209,17 @@ fun DiceContent(
     }
 }
 
-/** Chevron handle that collapses/expands the dice panel. */
+/** Chevron handle that collapses/expands the dice panel, with the screen's "?" help on the right. */
 @Composable
 private fun PanelToggle(visible: Boolean, onToggle: () -> Unit) {
+    var showHelp by rememberSaveable { mutableStateOf(false) }
     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        HelpButton(
+            contentDescription = stringResource(R.string.help_dice_button),
+            onClick = { showHelp = true },
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.align(Alignment.CenterEnd),
+        )
         IconButton(onClick = onToggle, modifier = Modifier.size(width = 72.dp, height = 40.dp)) {
             Icon(
                 if (visible) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
@@ -219,6 +229,7 @@ private fun PanelToggle(visible: Boolean, onToggle: () -> Unit) {
             )
         }
     }
+    if (showHelp) HelpSheet(R.string.help_dice_title, DICE_HELP, onDismiss = { showHelp = false })
 }
 
 @Composable
@@ -308,3 +319,16 @@ private fun DiceContentPreview() {
         )
     }
 }
+
+/** The dice roller's "?" sheet, in the order a new user needs it. */
+internal val DICE_HELP = listOf(
+    HelpTopic(R.string.help_dice_add_title, R.string.help_dice_add_text),
+    HelpTopic(R.string.help_dice_remove_title, R.string.help_dice_remove_text),
+    HelpTopic(R.string.help_dice_custom_title, R.string.help_dice_custom_text),
+    HelpTopic(R.string.help_dice_modifier_title, R.string.help_dice_modifier_text),
+    HelpTopic(R.string.help_dice_formula_title, R.string.help_dice_formula_text),
+    HelpTopic(R.string.help_dice_modes_title, R.string.help_dice_modes_text),
+    HelpTopic(R.string.help_dice_roll_title, R.string.help_dice_roll_text),
+    HelpTopic(R.string.help_dice_results_title, R.string.help_dice_results_text),
+    HelpTopic(R.string.help_dice_panel_title, R.string.help_dice_panel_text),
+)

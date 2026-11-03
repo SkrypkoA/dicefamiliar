@@ -26,13 +26,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.skrypko.dicefamiliar.R
+import com.skrypko.dicefamiliar.ui.common.HelpButton
 
 /** "?" button that opens [DiceSetHelpSheet]. */
 @Composable
 fun DiceSetHelpButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    IconButton(onClick = onClick, modifier = modifier) {
-        Icon(Icons.AutoMirrored.Outlined.HelpOutline, contentDescription = stringResource(R.string.dice_sets_help))
-    }
+    HelpButton(stringResource(R.string.dice_sets_help), onClick, modifier)
 }
 
 /** Requirements for dice-set images, face textures and ZIP packs (short form of docs/dice-assets.md). */

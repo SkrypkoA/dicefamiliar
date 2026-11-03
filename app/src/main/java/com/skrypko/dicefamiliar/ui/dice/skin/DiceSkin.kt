@@ -1,5 +1,6 @@
 package com.skrypko.dicefamiliar.ui.dice.skin
 
+import com.skrypko.dicefamiliar.ui.theme.themeDiceColors
 import android.graphics.Typeface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -39,11 +40,11 @@ data class DieColors(val fill: Color, val edge: Color, val text: Color)
 
 @Composable
 fun DieSkin.colors(): DieColors {
-    val scheme = MaterialTheme.colorScheme
+    val defaults = themeDiceColors()
     return DieColors(
-        fill = fill ?: scheme.primaryContainer,
-        edge = edge ?: scheme.primary,
-        text = text ?: scheme.onPrimaryContainer,
+        fill = fill ?: defaults.fill,
+        edge = edge ?: defaults.edge,
+        text = text ?: defaults.text,
     )
 }
 

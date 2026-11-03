@@ -59,6 +59,10 @@ import kotlin.math.sqrt
 import kotlin.math.ceil
 import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.graphics.Color
+import com.skrypko.dicefamiliar.ui.theme.themeDiceColors
+import com.skrypko.dicefamiliar.ui.theme.tray.themedTray
+import com.skrypko.dicefamiliar.ui.theme.tray.trayColors
 import com.skrypko.dicefamiliar.R
 import com.skrypko.dicefamiliar.ui.dice.render3d.Dice3DCanvas
 import com.skrypko.dicefamiliar.ui.dice.render3d.Die3D
@@ -122,14 +126,17 @@ fun DiceTray(
         Modifier
     }
 
+    val trayShape = MaterialTheme.shapes.extraLarge
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = TRAY_MIN_HEIGHT)
+            .themedTray(trayShape)
             .then(gestureModifier),
-        shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 2.dp,
+        shape = trayShape,
+        // The theme's tray painter draws the background (plain surface, felt, neon grid, ...).
+        color = Color.Transparent,
+        contentColor = trayColors().content,
     ) {
         Box(Modifier.fillMaxSize().padding(12.dp), contentAlignment = Alignment.Center) {
             val shown = state.pending ?: state.latest
@@ -138,7 +145,7 @@ fun DiceTray(
                 shown == null -> Text(
                     stringResource(R.string.dice_tray_empty),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = trayColors().muted,
                 )
                 state.settings.quickRoll -> FlatDice(shown, rolling = state.pending != null, animations, state.rollCount)
                 else -> SolidDice(state, shown, direction)
@@ -160,6 +167,7 @@ private fun SolidDice(state: DiceUiState, record: RollRecord, direction: Offset)
     val slots = record.slots()
     val shown = slots.take(MAX_3D_DICE)
     val scheme = MaterialTheme.colorScheme
+    val diceDefaults = themeDiceColors()
     val skin = state.skin
     val resources = LocalContext.current.resources
     val description = if (rolling) {
@@ -186,9 +194,9 @@ private fun SolidDice(state: DiceUiState, record: RollRecord, direction: Offset)
             colorsFor = { sides ->
                 val die = skin.forSides(sides)
                 DieColors(
-                    fill = die.fill ?: scheme.primaryContainer,
-                    edge = die.edge ?: scheme.primary,
-                    text = die.text ?: scheme.onPrimaryContainer,
+                    fill = die.fill ?: diceDefaults.fill,
+                    edge = die.edge ?: diceDefaults.edge,
+                    text = die.text ?: diceDefaults.text,
                 )
             },
             description = description,
@@ -317,13 +325,13 @@ private fun SwipeHint(animated: Boolean) {
         Icon(
             Icons.AutoMirrored.Filled.ArrowForward,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = trayColors().accent,
             modifier = Modifier.offset { IntOffset(shift.dp.roundToPx(), 0) },
         )
         Text(
             stringResource(R.string.dice_swipe_hint),
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = trayColors().muted,
         )
     }
 }

@@ -22,6 +22,7 @@ import com.skrypko.dicefamiliar.domain.random.RandomSource
 import com.skrypko.dicefamiliar.domain.remote.IdGenerator
 import com.skrypko.dicefamiliar.domain.remote.Participant
 import com.skrypko.dicefamiliar.domain.settings.AppSettings
+import com.skrypko.dicefamiliar.domain.settings.DarkMode
 import com.skrypko.dicefamiliar.ui.common.Sound
 import com.skrypko.dicefamiliar.ui.common.SoundPlayer
 import com.skrypko.dicefamiliar.ui.dice.skin.DiceSkin
@@ -62,6 +63,9 @@ class FakeAppSettingsRepository(initial: AppSettings = AppSettings()) : AppSetti
     }
     override suspend fun setHapticsEnabled(enabled: Boolean) { state.value = state.value.copy(hapticsEnabled = enabled) }
     override suspend fun setQuickRoll(enabled: Boolean) { state.value = state.value.copy(quickRoll = enabled) }
+    override suspend fun setThemeId(id: String) { state.value = state.value.copy(themeId = id) }
+    override suspend fun setDarkMode(mode: DarkMode) { state.value = state.value.copy(darkMode = mode) }
+    override suspend fun setDynamicColor(enabled: Boolean) { state.value = state.value.copy(dynamicColor = enabled) }
 }
 
 class FakeDiceStateRepository(var state: DiceState = DiceState()) : DiceStateRepository {

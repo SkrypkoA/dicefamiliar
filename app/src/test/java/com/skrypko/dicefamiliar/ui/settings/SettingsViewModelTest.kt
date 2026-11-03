@@ -1,6 +1,7 @@
 package com.skrypko.dicefamiliar.ui.settings
 
 import com.skrypko.dicefamiliar.domain.settings.AppSettings
+import com.skrypko.dicefamiliar.domain.settings.DarkMode
 import com.skrypko.dicefamiliar.data.dice.DiceSetImportOutcome
 import com.skrypko.dicefamiliar.domain.dice.skin.DiceSetImportError
 import com.skrypko.dicefamiliar.testing.FakeAppSettingsRepository
@@ -49,6 +50,21 @@ class SettingsViewModelTest {
         val expected = AppSettings(soundsEnabled = false, animationsEnabled = false, hapticsEnabled = false, quickRoll = true)
         assertEquals(expected, repository.settings.value)
         assertEquals(expected, vm.settings.value)
+    }
+
+    @Test
+    fun appearanceWritesThrough() = runTest(dispatcher) {
+        val repository = FakeAppSettingsRepository()
+        val vm = SettingsViewModel(repository, FakeDiceSetRepository())
+        backgroundScope.launch { vm.settings.collect {} }
+
+        vm.setTheme("tavern")
+        vm.setDarkMode(DarkMode.DARK)
+        vm.setDynamicColor(false)
+
+        assertEquals("tavern", vm.settings.value.themeId)
+        assertEquals(DarkMode.DARK, vm.settings.value.darkMode)
+        assertFalse(vm.settings.value.dynamicColor)
     }
 
     @Test

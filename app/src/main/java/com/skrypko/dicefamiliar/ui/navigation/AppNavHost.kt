@@ -63,7 +63,7 @@ fun AppNavHost(
                                 restoreState = true
                             }
                         },
-                        icon = { Icon(destination.icon, contentDescription = null) },
+                        icon = { Icon(destination.themedIcon(), contentDescription = null) },
                         label = { Text(stringResource(destination.labelRes), maxLines = 1) },
                     )
                 }
