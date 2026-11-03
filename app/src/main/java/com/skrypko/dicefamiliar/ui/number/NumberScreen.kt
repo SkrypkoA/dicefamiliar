@@ -32,7 +32,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Remove
@@ -65,6 +64,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
@@ -93,9 +93,15 @@ import com.skrypko.dicefamiliar.domain.number.NumberFormatter
 import com.skrypko.dicefamiliar.domain.number.NumberLimits
 import com.skrypko.dicefamiliar.domain.number.NumberMode
 import com.skrypko.dicefamiliar.domain.number.NumberResult
+import com.skrypko.dicefamiliar.ui.common.HelpButton
+import com.skrypko.dicefamiliar.ui.common.HelpSheet
+import com.skrypko.dicefamiliar.ui.common.HelpTopic
 import com.skrypko.dicefamiliar.ui.common.StepperArrows
 import com.skrypko.dicefamiliar.ui.common.StepperNumberField
 import com.skrypko.dicefamiliar.ui.theme.DiceFamiliarTheme
+import com.skrypko.dicefamiliar.ui.theme.LocalThemeStyle
+import com.skrypko.dicefamiliar.ui.theme.tray.themedTray
+import com.skrypko.dicefamiliar.ui.theme.tray.trayColors
 import kotlinx.coroutines.launch
 
 @Composable
@@ -227,7 +233,7 @@ fun NumberContent(
             enabled = !state.isGenerating,
             modifier = Modifier.fillMaxWidth().height(56.dp),
         ) {
-            Icon(Icons.Filled.Casino, contentDescription = null)
+            Icon(LocalThemeStyle.current.icons.generate, contentDescription = null)
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.number_generate), style = MaterialTheme.typography.titleMedium)
         }
@@ -413,15 +419,25 @@ private fun ResultArea(
     modifier: Modifier = Modifier,
 ) {
     val latest = state.latest
-    Surface(modifier, shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
-        Column(Modifier.padding(8.dp)) {
+    var showHelp by rememberSaveable { mutableStateOf(false) }
+    if (showHelp) HelpSheet(R.string.help_number_title, NUMBER_HELP, onDismiss = { showHelp = false })
+    val shape = MaterialTheme.shapes.extraLarge
+    val colors = trayColors()
+    Surface(
+        modifier.themedTray(shape),
+        shape = shape,
+        // The theme's tray painter draws the background (plain surface, felt, neon grid, ...).
+        color = Color.Transparent,
+        contentColor = colors.content,
+    ) {
+        Column(Modifier.padding(8.dp + LocalThemeStyle.current.tray.contentInset)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     latest?.let { rangeCaption(it) }.orEmpty(),
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = colors.muted,
                     modifier = Modifier.weight(1f).padding(start = 8.dp),
-                    maxLines = 1,
+                    maxLines = 2,
                 )
                 val actionsEnabled = latest != null && !state.isGenerating
                 IconButton(onClick = { latest?.let(onCopy) }, enabled = actionsEnabled) {
@@ -433,6 +449,7 @@ private fun ResultArea(
                 IconButton(onClick = { onShowHistory?.invoke() }, enabled = onShowHistory != null) {
                     Icon(Icons.Filled.History, contentDescription = stringResource(R.string.number_history))
                 }
+                HelpButton(contentDescription = stringResource(R.string.help_number_button), onClick = { showHelp = true })
             }
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 val animate = state.settings.animationsEnabled
@@ -441,7 +458,7 @@ private fun ResultArea(
                     latest == null -> Text(
                         stringResource(R.string.number_hint),
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = colors.muted,
                     )
                     animate -> AnimatedContent(
                         targetState = latest,
@@ -468,7 +485,7 @@ private fun GeneratingDots() {
     Text(
         "• • •",
         style = MaterialTheme.typography.displayMedium,
-        color = MaterialTheme.colorScheme.primary,
+        color = trayColors().accent,
         modifier = Modifier.alpha(pulse).semantics { contentDescription = description },
     )
 }
@@ -479,7 +496,7 @@ private fun ResultValues(result: NumberResult) {
         Text(
             NumberFormatter.format(result.values.single(), result.decimals),
             style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.primary,
+            color = trayColors().accent,
             maxLines = 1,
             autoSize = TextAutoSize.StepBased(minFontSize = 24.sp, maxFontSize = 112.sp),
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -509,7 +526,7 @@ private fun ResultValues(result: NumberResult) {
         Text(
             stringResource(R.string.number_sum, NumberFormatter.format(result.sum, result.decimals)),
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = trayColors().muted,
         )
     }
 }
@@ -580,3 +597,13 @@ private fun NumberContentPreview() {
         )
     }
 }
+
+/** The number generator's "?" sheet. */
+internal val NUMBER_HELP = listOf(
+    HelpTopic(R.string.help_number_range_title, R.string.help_number_range_text),
+    HelpTopic(R.string.help_number_count_title, R.string.help_number_count_text),
+    HelpTopic(R.string.help_number_mode_title, R.string.help_number_mode_text),
+    HelpTopic(R.string.help_number_duplicates_title, R.string.help_number_duplicates_text),
+    HelpTopic(R.string.help_number_results_title, R.string.help_number_results_text),
+    HelpTopic(R.string.help_number_memory_title, R.string.help_number_memory_text),
+)

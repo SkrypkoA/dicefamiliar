@@ -63,6 +63,7 @@ import com.skrypko.dicefamiliar.data.dice.DiceSetImportOutcome
 import com.skrypko.dicefamiliar.data.dice.DiceSetInfo
 import com.skrypko.dicefamiliar.domain.dice.skin.DiceSetImportError
 import com.skrypko.dicefamiliar.domain.settings.AppSettings
+import com.skrypko.dicefamiliar.domain.settings.DarkMode
 import com.skrypko.dicefamiliar.ui.settings.dicesets.DiceSetHelpButton
 import com.skrypko.dicefamiliar.ui.settings.dicesets.DiceSetHelpSheet
 import com.skrypko.dicefamiliar.ui.theme.DiceFamiliarTheme
@@ -105,6 +106,9 @@ fun SettingsScreen(
             onAnimations = viewModel::setAnimations,
             onHaptics = viewModel::setHaptics,
             onQuickRoll = viewModel::setQuickRoll,
+            onTheme = viewModel::setTheme,
+            onDarkMode = viewModel::setDarkMode,
+            onDynamicColor = viewModel::setDynamicColor,
             onSelectDiceSet = viewModel::selectDiceSet,
             onEditDiceSet = onEditDiceSet,
             onDeleteDiceSet = viewModel::deleteDiceSet,
@@ -123,6 +127,9 @@ fun SettingsContent(
     onHaptics: (Boolean) -> Unit,
     onQuickRoll: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    onTheme: (String) -> Unit = {},
+    onDarkMode: (DarkMode) -> Unit = {},
+    onDynamicColor: (Boolean) -> Unit = {},
     diceSets: DiceSetsUiState = DiceSetsUiState(),
     onSelectDiceSet: (String) -> Unit = {},
     onEditDiceSet: (String) -> Unit = {},
@@ -131,6 +138,9 @@ fun SettingsContent(
     onImportDiceSet: () -> Unit = {},
 ) {
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        SectionHeader(R.string.settings_section_appearance)
+        AppearanceSection(settings, onTheme = onTheme, onDarkMode = onDarkMode, onDynamicColor = onDynamicColor)
+        HorizontalDivider(Modifier.padding(top = 8.dp))
         SectionHeader(R.string.settings_section_general)
         SwitchRow(R.string.settings_sounds, R.string.settings_sounds_summary, settings.soundsEnabled, onSounds)
         SwitchRow(

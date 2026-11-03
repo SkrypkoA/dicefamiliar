@@ -2,6 +2,7 @@ package com.skrypko.dicefamiliar.data.settings
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.skrypko.dicefamiliar.domain.settings.AppSettings
+import com.skrypko.dicefamiliar.domain.settings.DarkMode
 import java.io.File
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -27,5 +28,13 @@ class AppSettingsRepositoryTest {
         repository.setAnimationsEnabled(false)
 
         assertEquals(AppSettings(animationsEnabled = false, quickRoll = true), repository.settings.first())
+
+        repository.setThemeId("cyberpunk")
+        repository.setDarkMode(DarkMode.LIGHT)
+        repository.setDynamicColor(false)
+        assertEquals(
+            AppSettings(animationsEnabled = false, quickRoll = true, themeId = "cyberpunk", darkMode = DarkMode.LIGHT, dynamicColor = false),
+            repository.settings.first(),
+        )
     }
 }

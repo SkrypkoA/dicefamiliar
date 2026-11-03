@@ -9,6 +9,7 @@ import com.skrypko.dicefamiliar.data.dice.StreamSource
 import com.skrypko.dicefamiliar.data.settings.AppSettingsRepository
 import com.skrypko.dicefamiliar.domain.dice.skin.DiceSetImportError
 import com.skrypko.dicefamiliar.domain.settings.AppSettings
+import com.skrypko.dicefamiliar.domain.settings.DarkMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
@@ -57,6 +58,9 @@ class SettingsViewModel @Inject constructor(
     fun setAnimations(enabled: Boolean) = launch { repository.setAnimationsEnabled(enabled) }
     fun setHaptics(enabled: Boolean) = launch { repository.setHapticsEnabled(enabled) }
     fun setQuickRoll(enabled: Boolean) = launch { repository.setQuickRoll(enabled) }
+    fun setTheme(id: String) = launch { repository.setThemeId(id) }
+    fun setDarkMode(mode: DarkMode) = launch { repository.setDarkMode(mode) }
+    fun setDynamicColor(enabled: Boolean) = launch { repository.setDynamicColor(enabled) }
 
     fun selectDiceSet(id: String) = launch { diceSets.select(id) }
 

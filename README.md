@@ -21,6 +21,7 @@
 - [Features](#features)
   - [Dice roller](#dice-roller)
   - [Random number generator](#random-number-generator)
+  - [Themes](#themes)
   - [Settings](#settings)
 - [Custom dice skins](#custom-dice-skins)
   - [Option 1: upload a ZIP pack](#option-1-upload-a-zip-pack)
@@ -45,13 +46,14 @@
 |---|---|
 | 🎲 **Dice roller** | ✅ Done |
 | ⚙️ **Settings** | ✅ Done |
+| 🎨 **Themes:** Classic, Tavern, Cyberpunk | ✅ Done |
 | 🔢 **Random number generator** | ✅ Done |
 | 📋 Pool picker (named lists with images, CSV/ZIP import & export) | 🚧 Planned |
 | 🃏 Card drawer (52 cards, jokers, multiple decks) | 🚧 Planned |
 | 📡 LAN play: ask another player's phone to roll | 🚧 Planned (the request/response layer is ready) |
 
 ### Dice roller
-- **Dice panel:** tap a die to add it to the formula, and long-press to remove one. The panel offers d4, d6, d8, d10, d12, d20, d100 and custom dN dice.
+- **Dice panel:** tap a die to add it to the formula, and **long-press a die to remove one**. Tap **?** for a short guide. The panel offers d4, d6, d8, d10, d12, d20, d100 and custom dN dice.
   - **d100** is shown as a percentile pair: a tens d10 (`00`–`90`) plus a units d10 (`0`–`9`).
   - **dN:** the first tap asks for the number of sides. Type it, or swipe up or down on the number. After that, each tap adds the same die.
 - **Formula:** `2d6+1d4+3`, `4d6kh3` (keep the highest 3) and `2d20kl1` (keep the lowest). The field is hidden behind the **ƒx** button.
@@ -77,7 +79,19 @@
   - **Recent results** keeps the last 20 in a history sheet, which you can clear.
 - **Sound, haptics and animations** follow the app settings. Every value is equally likely, and the generator uses `SecureRandom`.
 
+### Themes
+Pick one in **Settings → Appearance**. Each card shows a small preview of the theme.
+
+| Theme | Look |
+|---|---|
+| **Classic** | Clean Material design. Light, dark or following the system, with wallpaper colours on Android 12+. |
+| **Tavern** | Warm fantasy. Parchment and leather, gold trim, serif titles, and bone dice rolled on **green billiard cloth** framed in wood. Its icons are a magic wand, a treasure chest and a spellbook. |
+| **Cyberpunk** | Bright neon on black. Cyan, magenta and yellow, monospace type, cut corners, and dice on a **glowing neon grid**. Its icons are a chip, storage, a terminal and a bolt. |
+
+Every screen also has a **?** button that explains how to use it, for example how to add and remove dice.
+
 ### Settings
+- **Appearance:** the theme, plus dark mode and dynamic colours for Classic.
 - **Sounds, Animations, Haptic feedback, Quick roll**
 - **Dice sets:** choose the active skin, upload a ZIP, create, edit and delete your own sets. The **?** button lists the image requirements.
 - Settings is a tab in the bottom bar.
