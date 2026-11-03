@@ -51,6 +51,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.skrypko.dicefamiliar.R
+import com.skrypko.dicefamiliar.ui.common.StepperArrows
+import com.skrypko.dicefamiliar.ui.common.StepperNumberField
 import com.skrypko.dicefamiliar.domain.dice.DiceLimits
 
 /** Tap a die to add it to the formula, long-press to remove one. */
@@ -141,9 +143,6 @@ private fun CustomDieDialog(onDismiss: () -> Unit, onConfirm: (Int) -> Unit) {
     val sides = text.toIntOrNull()
     val valid = sides != null && sides in DiceLimits.MIN_SIDES..DiceLimits.MAX_SIDES
     val step: (Int) -> Unit = { delta -> text = DiceLimits.stepSides(text.toIntOrNull(), delta).toString() }
-    val increase = stringResource(R.string.dice_custom_increase)
-    val decrease = stringResource(R.string.dice_custom_decrease)
-    val stepPx = with(LocalDensity.current) { SWIPE_STEP.toPx() }
     // A basic dialog (not AlertDialog) so the actions can be real buttons pushed to the corners.
     BasicAlertDialog(onDismissRequest = onDismiss) {
         Surface(
@@ -152,49 +151,29 @@ private fun CustomDieDialog(onDismiss: () -> Unit, onConfirm: (Int) -> Unit) {
             tonalElevation = 6.dp,
         ) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp)) {
-            // Tap the field to type the value; swipe up / down anywhere on this area (field and
-            // chevrons) to increase / decrease it. The chevrons can also be tapped.
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.verticalSteps(stepPx, step),
-            ) {
-                IconButton(onClick = { step(1) }) {
-                    Icon(
-                        Icons.Filled.KeyboardArrowUp,
-                        contentDescription = increase,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            // Tap the field to type the value; swipe up / down on it (or tap the chevrons) to step.
+            StepperNumberField(
+                value = text,
+                onValueChange = { new -> text = new.filter { it.isDigit() }.take(4) },
+                onStep = step,
+                increaseDescription = stringResource(R.string.dice_custom_increase),
+                decreaseDescription = stringResource(R.string.dice_custom_decrease),
+                arrows = StepperArrows.ABOVE_BELOW,
+                label = stringResource(R.string.dice_custom_sides),
+                isError = text.isNotEmpty() && !valid,
+                supportingText = {
+                    Text(
+                        stringResource(R.string.dice_custom_range, DiceLimits.MIN_SIDES, DiceLimits.MAX_SIDES),
+                        color = if (text.isNotEmpty() && !valid) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                     )
-                }
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { new -> text = new.filter { it.isDigit() }.take(4) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag(CUSTOM_SIDES_FIELD),
-                    textStyle = MaterialTheme.typography.headlineMedium.copy(textAlign = TextAlign.Center),
-                    label = { Text(stringResource(R.string.dice_custom_sides)) },
-                    isError = text.isNotEmpty() && !valid,
-                    supportingText = {
-                        Text(
-                            stringResource(R.string.dice_custom_range, DiceLimits.MIN_SIDES, DiceLimits.MAX_SIDES),
-                            color = if (text.isNotEmpty() && !valid) {
-                                MaterialTheme.colorScheme.error
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                        )
-                    },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                )
-                IconButton(onClick = { step(-1) }) {
-                    Icon(
-                        Icons.Filled.KeyboardArrowDown,
-                        contentDescription = decrease,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
+                },
+                textStyle = MaterialTheme.typography.headlineMedium.copy(textAlign = TextAlign.Center),
+                fieldModifier = Modifier.testTag(CUSTOM_SIDES_FIELD),
+            )
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -220,48 +199,8 @@ private fun CustomDieDialog(onDismiss: () -> Unit, onConfirm: (Int) -> Unit) {
     }
 }
 
-/**
- * Vertical swipe stepping: every [stepPx] of finger travel up calls `onStep(+1)`, down `onStep(-1)`.
- * Events are read in the Initial pass so the gesture wins over the text field's own cursor/selection
- * drags (e.g. the cursor handle shown under a focused field). Until the finger moves past touch slop
- * nothing is consumed, so a tap still reaches the field and opens the keyboard.
- */
-private fun Modifier.verticalSteps(stepPx: Float, onStep: (Int) -> Unit): Modifier = pointerInput(stepPx) {
-    val slop = viewConfiguration.touchSlop
-    awaitEachGesture {
-        val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-        var lastY = down.position.y
-        var travelled = 0f
-        var dragging = false
-        while (true) {
-            val change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id } ?: break
-            if (!change.pressed) break
-            travelled += change.position.y - lastY
-            lastY = change.position.y
-            if (!dragging && abs(travelled) > slop) {
-                dragging = true
-                travelled -= sign(travelled) * slop
-            }
-            if (dragging) {
-                change.consume()
-                while (travelled <= -stepPx) {
-                    onStep(1)
-                    travelled += stepPx
-                }
-                while (travelled >= stepPx) {
-                    onStep(-1)
-                    travelled -= stepPx
-                }
-            }
-        }
-    }
-}
-
 /** Shared size so Cancel and Add are identical buttons. */
 private val DIALOG_BUTTON_SIZE = Modifier.height(48.dp).widthIn(min = 120.dp)
-
-/** Finger travel per ±1 step when swiping the custom-sides field. */
-private val SWIPE_STEP = 24.dp
 
 /** Test tag of the custom die's number field. */
 internal const val CUSTOM_SIDES_FIELD = "customSidesField"

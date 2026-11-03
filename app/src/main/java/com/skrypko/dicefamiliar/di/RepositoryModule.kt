@@ -5,6 +5,8 @@ import com.skrypko.dicefamiliar.data.dice.DataStoreDiceStateRepository
 import com.skrypko.dicefamiliar.data.dice.DiceSetRepository
 import com.skrypko.dicefamiliar.data.dice.DiceStateRepository
 import com.skrypko.dicefamiliar.data.navigation.DataStoreLastTabRepository
+import com.skrypko.dicefamiliar.data.number.DataStoreNumberStateRepository
+import com.skrypko.dicefamiliar.data.number.NumberStateRepository
 import com.skrypko.dicefamiliar.data.navigation.LastTabRepository
 import com.skrypko.dicefamiliar.data.remote.DataStoreParticipantRepository
 import com.skrypko.dicefamiliar.data.remote.ParticipantRepository
@@ -25,6 +27,9 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindDiceState(impl: DataStoreDiceStateRepository): DiceStateRepository
+
+    @Binds
+    abstract fun bindNumberState(impl: DataStoreNumberStateRepository): NumberStateRepository
 
     @Binds
     abstract fun bindParticipant(impl: DataStoreParticipantRepository): ParticipantRepository

@@ -153,4 +153,38 @@
     <string name="dice_help_manifest_example" translatable="false">{\n  "formatVersion": 1,\n  "id": "wood",\n  "name": "Wood",\n  "style": { "fill": "#8D6E63", "edge": "#3E2723", "text": "#FFF8E1" },\n  "dice": { "d6": { "image2d": "2d/d6.png", "pips": true } }\n}</string>
     <string name="dice_help_limits_title">Limits</string>
     <string name="dice_help_limits_text">Images up to 10 MB each, fonts (TTF, OTF) up to 5 MB, the whole ZIP up to 50 MB unpacked and 300 files. Other files are skipped.</string>
+    <!-- Random number -->
+    <string name="number_min">Min</string>
+    <string name="number_max">Max</string>
+    <string name="number_count">How many</string>
+    <string name="stepper_increase">Increase %1$s</string>
+    <string name="stepper_decrease">Decrease %1$s</string>
+    <string name="number_mode_integer">Integer</string>
+    <string name="number_mode_decimal">Decimal</string>
+    <string name="number_decimals">Decimal places</string>
+    <string name="number_decimals_less">Fewer decimal places</string>
+    <string name="number_decimals_more">More decimal places</string>
+    <string name="number_allow_duplicates">Allow duplicates</string>
+    <string name="number_generate">Generate</string>
+    <string name="number_hint">Tap Generate</string>
+    <string name="number_generating">Generating</string>
+    <string name="number_sum">Sum: %1$s</string>
+    <string name="number_range">%1$s – %2$s</string>
+    <string name="number_range_count">%1$s – %2$s · ×%3$d</string>
+    <string name="number_no_duplicates">no duplicates</string>
+    <string name="number_copy">Copy result</string>
+    <string name="number_share">Share result</string>
+    <string name="number_copied">Copied</string>
+    <string name="number_history">Recent results</string>
+    <string name="number_clear_history">Clear history</string>
+    <string name="number_error_whole">Enter a whole number</string>
+    <string name="number_error_number">Enter a number</string>
+    <plurals name="number_error_too_precise">
+        <item quantity="one">At most %1$d decimal place</item>
+        <item quantity="other">At most %1$d decimal places</item>
+    </plurals>
+    <string name="number_error_limits">Between −1,000,000,000 and 1,000,000,000</string>
+    <string name="number_error_min_above_max">Must be at least Min</string>
+    <string name="number_error_count">From 1 to 1000</string>
+    <string name="number_error_count_range">More than the range holds; allow duplicates or widen it</string>
 </resources>
