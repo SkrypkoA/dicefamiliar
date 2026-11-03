@@ -1,10 +1,7 @@
 package com.skrypko.dicefamiliar.ui.dice
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.keyframes
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,21 +16,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -58,12 +50,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import com.skrypko.dicefamiliar.R
 import com.skrypko.dicefamiliar.domain.dice.NotationError
 import com.skrypko.dicefamiliar.domain.dice.RollMode
 import com.skrypko.dicefamiliar.ui.dice.skin.LocalDiceSkin
 import com.skrypko.dicefamiliar.ui.common.CaptureAsImage
-import com.skrypko.dicefamiliar.ui.common.HelpButton
+import com.skrypko.dicefamiliar.ui.common.FeatureHandleBar
+import com.skrypko.dicefamiliar.ui.common.FeatureHistory
+import com.skrypko.dicefamiliar.ui.common.FeaturePanel
+import com.skrypko.dicefamiliar.ui.common.FeatureShare
+import com.skrypko.dicefamiliar.ui.common.copyText
 import com.skrypko.dicefamiliar.ui.common.shareImage
 import com.skrypko.dicefamiliar.ui.common.HelpSheet
 import com.skrypko.dicefamiliar.ui.common.HelpTopic
@@ -79,6 +78,8 @@ fun DiceScreen(viewModel: DiceViewModel = hiltViewModel()) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val resources = LocalResources.current
+    val clipboard = LocalClipboard.current
+    val snackbar = remember { SnackbarHostState() }
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
@@ -110,6 +111,7 @@ fun DiceScreen(viewModel: DiceViewModel = hiltViewModel()) {
         }
     }
 
+    Box(Modifier.fillMaxSize()) {
     DiceContent(
         state = uiState,
         fieldShake = shake.value,
@@ -129,7 +131,14 @@ fun DiceScreen(viewModel: DiceViewModel = hiltViewModel()) {
         onShareImage = { image ->
             scope.launch { shareImage(context, image, "roll.png", resources.getString(R.string.dice_share)) }
         },
+        onCopy = { text ->
+            scope.launch {
+                if (copyText(clipboard, resources.getString(R.string.dice_share), text)) snackbar.showSnackbar(resources.getString(R.string.copied))
+            }
+        },
     )
+    SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
+    }
 }
 
 /**
@@ -153,10 +162,12 @@ fun DiceContent(
     onTogglePanel: () -> Unit = {},
     onShare: (String) -> Unit = {},
     onShareImage: (ImageBitmap) -> Unit = {},
+    onCopy: (String) -> Unit = {},
 ) {
     var capturing by remember { mutableStateOf(false) }
     val quickRoll = state.settings.quickRoll
     var showHistory by rememberSaveable { mutableStateOf(false) }
+    var showHelp by rememberSaveable { mutableStateOf(false) }
     val maxPanelHeight = (LocalConfiguration.current.screenHeightDp * 0.55f).dp
     CompositionLocalProvider(LocalDiceSkin provides state.skin) {
         // "Share as image": the latest roll is rendered off screen, captured once, then shared.
@@ -188,28 +199,30 @@ fun DiceContent(
                     modifier = Modifier.heightIn(max = maxPanelHeight),
                 )
             }
-            if (state.settings.animationsEnabled) {
-                AnimatedVisibility(
-                    visible = state.panelVisible,
-                    enter = expandVertically(),
-                    exit = shrinkVertically(),
-                ) { panel() }
-            } else if (state.panelVisible) {
-                panel()
-            }
-            PanelToggle(visible = state.panelVisible, onToggle = onTogglePanel)
+            FeaturePanel(visible = state.panelVisible, animate = state.settings.animationsEnabled) { panel() }
+            FeatureHandleBar(
+                panelVisible = state.panelVisible,
+                onTogglePanel = onTogglePanel,
+                hideDescription = stringResource(R.string.dice_panel_hide),
+                showDescription = stringResource(R.string.dice_panel_show),
+                helpDescription = stringResource(R.string.help_dice_button),
+                onHelp = { showHelp = true },
+                share = FeatureShare(
+                    description = stringResource(R.string.dice_share),
+                    onCopy = { state.latest?.let { onCopy(it.shareText()) } },
+                    onShareText = { state.latest?.let { onShare(it.shareText()) } },
+                    onShareImage = { capturing = true },
+                    enabled = state.latest != null && state.pending == null,
+                ),
+                history = FeatureHistory(stringResource(R.string.dice_history), if (state.recent.size > 1) ({ showHistory = true }) else null),
+            )
             DiceTray(
                 state = state,
                 swipeToRoll = !quickRoll,
                 onSwipeRoll = onRoll,
                 modifier = Modifier.weight(1f),
             )
-            RollSumBar(
-                state = state,
-                onShowHistory = if (state.recent.size > 1) ({ showHistory = true }) else null,
-                onShareText = { state.latest?.let { onShare(it.shareText()) } },
-                onShareImage = { capturing = true },
-            )
+            RollSumBar(state = state)
             if (quickRoll) {
                 Button(
                     onClick = { onRoll(0f) },
@@ -234,30 +247,8 @@ fun DiceContent(
                 }
             }
         }
+        if (showHelp) HelpSheet(R.string.help_dice_title, DICE_HELP, onDismiss = { showHelp = false })
     }
-}
-
-/** Chevron handle that collapses/expands the dice panel, with the screen's "?" help on the right. */
-@Composable
-private fun PanelToggle(visible: Boolean, onToggle: () -> Unit) {
-    var showHelp by rememberSaveable { mutableStateOf(false) }
-    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        HelpButton(
-            contentDescription = stringResource(R.string.help_dice_button),
-            onClick = { showHelp = true },
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.align(Alignment.CenterEnd),
-        )
-        IconButton(onClick = onToggle, modifier = Modifier.size(width = 72.dp, height = 40.dp)) {
-            Icon(
-                if (visible) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                contentDescription = stringResource(if (visible) R.string.dice_panel_hide else R.string.dice_panel_show),
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(40.dp),
-            )
-        }
-    }
-    if (showHelp) HelpSheet(R.string.help_dice_title, DICE_HELP, onDismiss = { showHelp = false })
 }
 
 @Composable

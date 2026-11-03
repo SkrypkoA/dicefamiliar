@@ -24,6 +24,8 @@ data class NumberState(
     val mode: NumberMode = NumberMode.INTEGER,
     val decimals: Int = NumberLimits.DEFAULT_DECIMALS,
     val lastResult: NumberResult? = null,
+    /** The options panel at the top of the screen is shown. */
+    val panelVisible: Boolean = true,
 )
 
 interface NumberStateRepository {
@@ -32,6 +34,7 @@ interface NumberStateRepository {
     /** Saves the inputs; [NumberState.lastResult] is ignored (see [saveLastResult]). */
     suspend fun save(state: NumberState)
     suspend fun saveLastResult(result: NumberResult?)
+    suspend fun savePanelVisible(visible: Boolean)
 }
 
 @Singleton
@@ -50,6 +53,7 @@ class DataStoreNumberStateRepository @Inject constructor(
             count = prefs[COUNT] ?: defaults.count,
             allowDuplicates = prefs[DUPLICATES] ?: defaults.allowDuplicates,
             mode = prefs[MODE]?.let { name -> NumberMode.entries.firstOrNull { it.name == name } } ?: defaults.mode,
+            panelVisible = prefs[PANEL_VISIBLE] ?: defaults.panelVisible,
             decimals = (prefs[DECIMALS] ?: defaults.decimals).coerceIn(NumberLimits.MIN_DECIMALS, NumberLimits.MAX_DECIMALS),
             lastResult = prefs[LAST_RESULT]?.let { text ->
                 try {
@@ -74,6 +78,10 @@ class DataStoreNumberStateRepository @Inject constructor(
         }
     }
 
+    override suspend fun savePanelVisible(visible: Boolean) {
+        dataStore.edit { it[PANEL_VISIBLE] = visible }
+    }
+
     override suspend fun saveLastResult(result: NumberResult?) {
         dataStore.edit {
             if (result == null) it.remove(LAST_RESULT) else it[LAST_RESULT] = json.encodeToString(result)
@@ -88,5 +96,6 @@ class DataStoreNumberStateRepository @Inject constructor(
         val MODE = stringPreferencesKey("number.mode")
         val DECIMALS = intPreferencesKey("number.decimals")
         val LAST_RESULT = stringPreferencesKey("number.last_result")
+        val PANEL_VISIBLE = booleanPreferencesKey("number.panel_visible")
     }
 }

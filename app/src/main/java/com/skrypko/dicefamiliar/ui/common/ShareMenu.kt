@@ -3,6 +3,7 @@ package com.skrypko.dicefamiliar.ui.common
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.TextSnippet
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.DropdownMenu
@@ -22,7 +23,8 @@ import androidx.compose.ui.res.stringResource
 import com.skrypko.dicefamiliar.R
 
 /**
- * The share icon used by every feature: it opens a menu with "Share as text" and "Share as image".
+ * The share icon used by every feature: it opens a menu with "Copy" (when [onCopy] is given),
+ * "Share as text" and "Share as image". It lives on the left of [FeatureHandleBar].
  * For the image, render the result with [CaptureAsImage] and send it with [shareImage].
  */
 @Composable
@@ -33,6 +35,7 @@ fun ShareMenuButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     tint: Color = Color.Unspecified,
+    onCopy: (() -> Unit)? = null,
 ) {
     var open by remember { mutableStateOf(false) }
     Box(modifier) {
@@ -44,6 +47,16 @@ fun ShareMenuButton(
             )
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            if (onCopy != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.share_copy)) },
+                    leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
+                    onClick = {
+                        open = false
+                        onCopy()
+                    },
+                )
+            }
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.share_as_text)) },
                 leadingIcon = { Icon(Icons.AutoMirrored.Outlined.TextSnippet, contentDescription = null) },

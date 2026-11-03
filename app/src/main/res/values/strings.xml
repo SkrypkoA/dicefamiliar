@@ -221,9 +221,9 @@
     <string name="help_dice_roll_title">Roll</string>
     <string name="help_dice_roll_text">Swipe across the tray to throw the dice. A faster swipe tumbles longer, but never changes the result. With Quick roll on (Settings), tap the Roll button instead.</string>
     <string name="help_dice_results_title">Results</string>
-    <string name="help_dice_results_text">The total is shown under the tray. Faded dice were dropped by kh or kl. The history button opens your recent rolls.</string>
+    <string name="help_dice_results_text">The total is shown under the tray. Faded dice were dropped by kh or kl. Under the dice panel, the share icon copies the roll or shares it as text or as a picture, and the history button opens your recent rolls.</string>
     <string name="help_dice_panel_title">More room</string>
-    <string name="help_dice_panel_text">The chevron under the panel hides or shows it, so the tray gets more space.</string>
+    <string name="help_dice_panel_text">The chevron under the panel hides or shows it, so the tray gets more space. Every feature has the same chevron.</string>
     <string name="help_number_title">How to generate numbers</string>
     <string name="help_number_button">How to use the number generator</string>
     <string name="help_number_range_title">Range</string>
@@ -235,7 +235,7 @@
     <string name="help_number_duplicates_title">Duplicates</string>
     <string name="help_number_duplicates_text">With Allow duplicates off, every number is different. The range then has to hold at least as many values as you ask for.</string>
     <string name="help_number_results_title">Results</string>
-    <string name="help_number_results_text">One number is shown large; several are shown as chips with their sum. Copy puts them on the clipboard and Share sends them to another app. The history button lists recent results, and you can clear it there.</string>
+    <string name="help_number_results_text">One number is shown large; several are shown as chips with their sum. Under the options, the share icon copies the result or shares it as text or as a picture, and the history button lists recent results (you can clear it there). The chevron hides the options for more room.</string>
     <string name="help_number_memory_title">Remembered</string>
     <string name="help_number_memory_text">Your last range, options and result are kept when you close the app.</string>
     <!-- Cards -->
@@ -341,7 +341,7 @@
     <string name="help_cards_view_title">Look at a card</string>
     <string name="help_cards_view_text">Tap a card in your hand to see it full screen. Tap again to close.</string>
     <string name="help_cards_buttons_title">Buttons</string>
-    <string name="help_cards_buttons_text">Prefer buttons? The hand-pointer icon at the top shows buttons for every action. The share icon sends your hand as text or as a picture; the chevron hides the top bar for more room.</string>
+    <string name="help_cards_buttons_text">Prefer buttons? The hand-pointer icon at the top shows buttons for every action. Under the top bar, the share icon copies your hand or shares it as text or as a picture; the chevron hides the top bar for more room.</string>
     <string name="help_cards_reset_title">Reset and decks</string>
     <string name="help_cards_reset_text">Reset shuffles every card back into the deck. The cards icon at the top left opens the deck list: 36, 52 or 54 cards, your custom decks and uploaded decks. Only the current deck’s table is kept when you close the app.</string>
     <string name="help_decks_title">Decks</string>
@@ -515,5 +515,13 @@
     <string name="help_pool_remove_title">Remove picked items</string>
     <string name="help_pool_remove_text">On: picked items are set aside and not picked again (like drawing names from a hat). Put back all returns them. Nothing is deleted.</string>
     <string name="help_pool_results_title">Results</string>
-    <string name="help_pool_results_text">Copy or share the result as text or as a picture. The history button shows recent picks.</string>
+    <string name="help_pool_results_text">Under the options, the share icon copies the result or shares it as text or as a picture, and the history button shows recent picks. The chevron hides the options for more room.</string>
+    <!-- Unified feature layout -->
+    <string name="share_copy">Copy</string>
+    <string name="copied">Copied</string>
+    <string name="number_panel_hide">Hide options</string>
+    <string name="number_panel_show">Show options</string>
+    <string name="pool_panel_hide">Hide options</string>
+    <string name="pool_panel_show">Show options</string>
+    <string name="pool_help_button">How to pick from a pool</string>
 </resources>

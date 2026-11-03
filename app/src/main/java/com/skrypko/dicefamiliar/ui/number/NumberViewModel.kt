@@ -47,6 +47,7 @@ data class NumberUiState(
     /** Newest first; includes [latest]. */
     val recent: List<NumberResult> = emptyList(),
     val settings: AppSettings = AppSettings(),
+    val panelVisible: Boolean = true,
 )
 
 sealed interface NumberEvent {
@@ -88,6 +89,7 @@ class NumberViewModel @Inject constructor(
                         allowDuplicates = saved.allowDuplicates,
                         mode = saved.mode,
                         decimals = saved.decimals,
+                        panelVisible = saved.panelVisible,
                         latest = it.latest ?: saved.lastResult,
                         recent = it.recent.ifEmpty { listOfNotNull(saved.lastResult) },
                     ),
@@ -151,6 +153,13 @@ class NumberViewModel @Inject constructor(
             _events.trySend(NumberEvent.Shown)
             stateRepository.saveLastResult(result)
         }
+    }
+
+    /** Shows or hides the options panel; remembered. */
+    fun togglePanel() {
+        val visible = !_uiState.value.panelVisible
+        _uiState.update { it.copy(panelVisible = visible) }
+        viewModelScope.launch { stateRepository.savePanelVisible(visible) }
     }
 
     /** Empties the history; the latest result stays on screen. */

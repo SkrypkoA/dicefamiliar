@@ -192,6 +192,24 @@ class PoolScreensTest {
     }
 
     @Test
+    fun collapsedPanelHidesOptionsButKeepsShareAndPick() {
+        var toggles = 0
+        compose.setContent {
+            DiceFamiliarTheme {
+                PoolPickContent(
+                    PoolPickUiState(loaded = true, pool = fruit, settings = noAnimations, panelVisible = false),
+                    PoolPickActions(onTogglePanel = { toggles++ }),
+                )
+            }
+        }
+        compose.onNodeWithText("How many").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Share result").assertIsDisplayed()
+        compose.onNodeWithTag(PICK_BUTTON_TAG).assertIsDisplayed()
+        compose.onNodeWithContentDescription("Show options").performClick()
+        assertEquals(1, toggles)
+    }
+
+    @Test
     fun everyItemPickedDisablesPick() {
         val pool = fruit.copy(items = fruit.items.map { it.copy(setAside = true) })
         compose.setContent {

@@ -46,6 +46,7 @@ data class PoolPickUiState(
     val recent: List<PickRecord> = emptyList(),
     val settings: AppSettings = AppSettings(),
     val imageDir: File = File(""),
+    val panelVisible: Boolean = true,
 ) {
     /** The items a pick can return: with "Remove picked items" on, the ones not set aside. */
     val available: List<PoolItem> get() = pool?.items.orEmpty().let { items -> if (removePicked) items.filterNot { it.setAside } else items }
@@ -84,7 +85,10 @@ class PoolPickViewModel @Inject constructor(
         }
         viewModelScope.launch {
             val saved = pickState.load(poolId)
-            _uiState.update { it.copy(count = saved.count, allowRepeats = saved.allowRepeats, removePicked = saved.removePicked) }
+            val panel = pickState.panelVisible()
+            _uiState.update {
+                it.copy(count = saved.count, allowRepeats = saved.allowRepeats, removePicked = saved.removePicked, panelVisible = panel)
+            }
             repository.observePool(poolId).collect { pool ->
                 _uiState.update { validated(it.copy(pool = pool, loaded = true)) }
             }
@@ -104,6 +108,13 @@ class PoolPickViewModel @Inject constructor(
 
     fun onShowNamesChange(show: Boolean) {
         viewModelScope.launch { repository.setShowNames(poolId, show) }
+    }
+
+    /** Shows or hides the options panel; remembered for every pool. */
+    fun togglePanel() {
+        val visible = !_uiState.value.panelVisible
+        _uiState.update { it.copy(panelVisible = visible) }
+        viewModelScope.launch { pickState.savePanelVisible(visible) }
     }
 
     /** Puts every set-aside item back into the pool. */

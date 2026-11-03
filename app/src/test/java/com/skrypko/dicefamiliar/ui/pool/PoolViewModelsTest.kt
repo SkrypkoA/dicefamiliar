@@ -235,4 +235,15 @@ class PoolPickViewModelTest {
         advanceUntilIdle()
         assertEquals(3, vm.uiState.value.available.size)
     }
+
+    @Test
+    fun panelVisibilityIsRemembered() = runTest(dispatcher) {
+        pickState.panel = false
+        val vm = picker()
+        assertFalse(vm.uiState.value.panelVisible)
+        vm.togglePanel()
+        advanceUntilIdle()
+        assertTrue(vm.uiState.value.panelVisible)
+        assertTrue(pickState.panel)
+    }
 }

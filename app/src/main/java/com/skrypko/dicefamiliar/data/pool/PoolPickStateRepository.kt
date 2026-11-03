@@ -16,6 +16,10 @@ interface PoolPickStateRepository {
     suspend fun load(poolId: Long): PoolPickState
     suspend fun save(poolId: Long, state: PoolPickState)
     suspend fun clear(poolId: Long)
+
+    /** The Pick screen's options panel is shown (one setting for every pool). */
+    suspend fun panelVisible(): Boolean
+    suspend fun savePanelVisible(visible: Boolean)
 }
 
 @Singleton
@@ -49,7 +53,17 @@ class DataStorePoolPickStateRepository @Inject constructor(
         }
     }
 
+    override suspend fun panelVisible(): Boolean = dataStore.data.first()[PANEL_VISIBLE] ?: true
+
+    override suspend fun savePanelVisible(visible: Boolean) {
+        dataStore.edit { it[PANEL_VISIBLE] = visible }
+    }
+
     private fun count(id: Long) = stringPreferencesKey("pool.pick.$id.count")
     private fun repeats(id: Long) = booleanPreferencesKey("pool.pick.$id.repeats")
     private fun remove(id: Long) = booleanPreferencesKey("pool.pick.$id.remove")
+
+    private companion object {
+        val PANEL_VISIBLE = booleanPreferencesKey("pool.panel_visible")
+    }
 }

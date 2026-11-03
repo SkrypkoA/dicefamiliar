@@ -1,14 +1,11 @@
 package com.skrypko.dicefamiliar.ui.cards
 
 import android.content.Intent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.splineBasedDecay
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -37,8 +34,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material3.AlertDialog
@@ -99,15 +94,20 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import com.skrypko.dicefamiliar.R
 import com.skrypko.dicefamiliar.domain.cards.CardFace
 import com.skrypko.dicefamiliar.domain.cards.DeckDefinition
 import com.skrypko.dicefamiliar.domain.cards.DeckKind
 import com.skrypko.dicefamiliar.ui.common.CaptureAsImage
-import com.skrypko.dicefamiliar.ui.common.HelpButton
 import com.skrypko.dicefamiliar.ui.common.HelpSheet
 import com.skrypko.dicefamiliar.ui.common.HelpTopic
-import com.skrypko.dicefamiliar.ui.common.ShareMenuButton
+import com.skrypko.dicefamiliar.ui.common.FeatureHandleBar
+import com.skrypko.dicefamiliar.ui.common.FeaturePanel
+import com.skrypko.dicefamiliar.ui.common.FeatureShare
+import com.skrypko.dicefamiliar.ui.common.copyText
 import com.skrypko.dicefamiliar.ui.common.shareImage
 import com.skrypko.dicefamiliar.ui.theme.LocalThemeStyle
 import com.skrypko.dicefamiliar.ui.theme.tray.themedTray
@@ -123,6 +123,8 @@ fun CardTableScreen(onOpenDecks: () -> Unit, viewModel: CardTableViewModel = hil
     val context = LocalContext.current
     val resources = LocalResources.current
     val scope = rememberCoroutineScope()
+    val clipboard = LocalClipboard.current
+    val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             if (!viewModel.uiState.value.settings.hapticsEnabled) return@collect
@@ -134,9 +136,15 @@ fun CardTableScreen(onOpenDecks: () -> Unit, viewModel: CardTableViewModel = hil
             )
         }
     }
+    Box(Modifier.fillMaxSize()) {
     CardTableContent(
         state = state,
         onOpenDecks = onOpenDecks,
+        onCopy = { text ->
+            scope.launch {
+                if (copyText(clipboard, resources.getString(R.string.cards_share), text)) snackbar.showSnackbar(resources.getString(R.string.copied))
+            }
+        },
         onShare = { text ->
             val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
             context.startActivity(Intent.createChooser(send, resources.getString(R.string.cards_share)))
@@ -159,6 +167,8 @@ fun CardTableScreen(onOpenDecks: () -> Unit, viewModel: CardTableViewModel = hil
             togglePanel = viewModel::togglePanel,
         ),
     )
+    SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
+    }
 }
 
 /** Everything the table can do; gestures and the optional buttons call the same actions. */
@@ -182,7 +192,7 @@ data class CardTableActions(
 )
 
 /**
- * The card table: a collapsible top bar (deck, share, buttons toggle, reset), the chevron with "?",
+ * The card table: a collapsible top bar (deck, buttons toggle, reset), the handle bar (share, chevron, "?"),
  * then the play area (draw and discard piles above the hand) on the theme's tray, then the optional
  * action buttons.
  */
@@ -194,6 +204,7 @@ fun CardTableContent(
     modifier: Modifier = Modifier,
     onShare: (String) -> Unit = {},
     onShareImage: (ImageBitmap) -> Unit = {},
+    onCopy: (String) -> Unit = {},
 ) {
     var capturing by remember { mutableStateOf(false) }
     var viewing by rememberSaveable { mutableStateOf<Int?>(null) }
@@ -218,18 +229,26 @@ fun CardTableContent(
                 state,
                 deck,
                 onOpenDecks,
-                onShareText = { shareText?.let(onShare) },
-                onShareImage = { capturing = true },
                 onReset = { confirmReset = true },
                 actions,
             )
         }
-        if (state.settings.animationsEnabled) {
-            AnimatedVisibility(visible = state.panelVisible, enter = expandVertically(), exit = shrinkVertically()) { bar() }
-        } else if (state.panelVisible) {
-            bar()
-        }
-        PanelToggle(state.panelVisible, actions.togglePanel, onHelp = { showHelp = true })
+        FeaturePanel(visible = state.panelVisible, animate = state.settings.animationsEnabled) { bar() }
+        FeatureHandleBar(
+            panelVisible = state.panelVisible,
+            onTogglePanel = actions.togglePanel,
+            hideDescription = stringResource(R.string.cards_panel_hide),
+            showDescription = stringResource(R.string.cards_panel_show),
+            helpDescription = stringResource(R.string.help_cards_button),
+            onHelp = { showHelp = true },
+            share = FeatureShare(
+                description = stringResource(R.string.cards_share),
+                onCopy = { shareText?.let(onCopy) },
+                onShareText = { shareText?.let(onShare) },
+                onShareImage = { capturing = true },
+                enabled = state.hand.isNotEmpty(),
+            ),
+        )
 
         PlayArea(state, actions, onView = { viewing = it }, modifier = Modifier.weight(1f).fillMaxWidth())
 
@@ -273,8 +292,6 @@ private fun TopBar(
     state: CardTableUiState,
     deck: DeckDefinition?,
     onOpenDecks: () -> Unit,
-    onShareText: () -> Unit,
-    onShareImage: () -> Unit,
     onReset: () -> Unit,
     actions: CardTableActions,
 ) {
@@ -295,12 +312,6 @@ private fun TopBar(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        ShareMenuButton(
-            contentDescription = stringResource(R.string.cards_share),
-            onShareText = onShareText,
-            onShareImage = onShareImage,
-            enabled = state.hand.isNotEmpty(),
-        )
         IconToggleButton(checked = state.showButtons, onCheckedChange = { actions.toggleButtons() }) {
             Icon(
                 Icons.Outlined.TouchApp,
@@ -310,27 +321,6 @@ private fun TopBar(
         IconButton(onClick = onReset) {
             Icon(Icons.Outlined.RestartAlt, contentDescription = stringResource(R.string.cards_reset))
         }
-    }
-}
-
-/** Chevron that collapses/expands the top bar (like the dice panel), with the "?" help on the right. */
-@Composable
-private fun PanelToggle(visible: Boolean, onToggle: () -> Unit, onHelp: () -> Unit) {
-    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        IconButton(onClick = onToggle, modifier = Modifier.size(width = 72.dp, height = 32.dp)) {
-            Icon(
-                if (visible) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                contentDescription = stringResource(if (visible) R.string.cards_panel_hide else R.string.cards_panel_show),
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(32.dp),
-            )
-        }
-        HelpButton(
-            stringResource(R.string.help_cards_button),
-            onClick = onHelp,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.align(Alignment.CenterEnd),
-        )
     }
 }
 
