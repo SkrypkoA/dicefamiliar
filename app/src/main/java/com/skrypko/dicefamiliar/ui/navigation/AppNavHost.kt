@@ -21,7 +21,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.skrypko.dicefamiliar.ui.cards.CardsScreen
+import com.skrypko.dicefamiliar.ui.cards.CardTableScreen
+import com.skrypko.dicefamiliar.ui.cards.CustomDeckScreen
+import com.skrypko.dicefamiliar.ui.cards.DeckListScreen
 import com.skrypko.dicefamiliar.ui.dice.DiceScreen
 import com.skrypko.dicefamiliar.ui.number.NumberScreen
 import com.skrypko.dicefamiliar.ui.pool.list.PoolListScreen
@@ -44,7 +46,12 @@ fun AppNavHost(
     val currentDestination = backStackEntry?.destination
     val currentTab = TopLevelDestination.entries.firstOrNull { tab ->
         currentDestination?.hierarchy?.any { it.hasRoute(tab.routeClass) } == true
-    } ?: TopLevelDestination.SETTINGS.takeIf { currentDestination?.hasRoute(DiceSetEditRoute::class) == true }
+    } ?: when {
+        currentDestination?.hasRoute(DiceSetEditRoute::class) == true -> TopLevelDestination.SETTINGS
+        currentDestination?.hasRoute(DeckListRoute::class) == true ||
+            currentDestination?.hasRoute(CustomDeckRoute::class) == true -> TopLevelDestination.CARDS
+        else -> null
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -78,7 +85,14 @@ fun AppNavHost(
             composable<NumberRoute> { NumberScreen() }
             composable<PoolListRoute> { PoolListScreen() }
             composable<DiceRoute> { DiceScreen() }
-            composable<CardsRoute> { CardsScreen() }
+            composable<CardsRoute> { CardTableScreen(onOpenDecks = { navController.navigate(DeckListRoute) }) }
+            composable<DeckListRoute> {
+                DeckListScreen(
+                    onBack = { navController.popBackStack() },
+                    onEditCustom = { id -> navController.navigate(CustomDeckRoute(id)) },
+                )
+            }
+            composable<CustomDeckRoute> { CustomDeckScreen(onDone = { navController.popBackStack() }) }
             composable<SettingsRoute> {
                 SettingsScreen(onEditDiceSet = { id -> navController.navigate(DiceSetEditRoute(id)) })
             }

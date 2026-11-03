@@ -50,36 +50,36 @@ fun DiceSetHelpSheet(onDismiss: () -> Unit) {
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.semantics { heading() },
             )
-            Body(R.string.dice_help_intro)
-            Section(R.string.dice_help_ways_title, R.string.dice_help_ways_text)
-            Section(R.string.dice_help_2d_title, R.string.dice_help_2d_text)
-            Section(R.string.dice_help_3d_title, R.string.dice_help_3d_text)
-            Section(R.string.dice_help_zip_title, R.string.dice_help_zip_text)
-            Code(R.string.dice_help_zip_tree)
-            Code(R.string.dice_help_manifest_example)
-            Section(R.string.dice_help_limits_title, R.string.dice_help_limits_text)
+            HelpBody(R.string.dice_help_intro)
+            HelpSection(R.string.dice_help_ways_title, R.string.dice_help_ways_text)
+            HelpSection(R.string.dice_help_2d_title, R.string.dice_help_2d_text)
+            HelpSection(R.string.dice_help_3d_title, R.string.dice_help_3d_text)
+            HelpSection(R.string.dice_help_zip_title, R.string.dice_help_zip_text)
+            HelpCode(R.string.dice_help_zip_tree)
+            HelpCode(R.string.dice_help_manifest_example)
+            HelpSection(R.string.dice_help_limits_title, R.string.dice_help_limits_text)
         }
     }
 }
 
 @Composable
-private fun Section(@StringRes title: Int, @StringRes text: Int) {
+internal fun HelpSection(@StringRes title: Int, @StringRes text: Int) {
     Text(
         stringResource(title),
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(top = 16.dp).semantics { heading() },
     )
-    Body(text)
+    HelpBody(text)
 }
 
 @Composable
-private fun Body(@StringRes text: Int) {
+internal fun HelpBody(@StringRes text: Int) {
     Text(stringResource(text), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
 }
 
 @Composable
-private fun Code(@StringRes text: Int) {
+internal fun HelpCode(@StringRes text: Int) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceVariant,
         shape = RoundedCornerShape(8.dp),
