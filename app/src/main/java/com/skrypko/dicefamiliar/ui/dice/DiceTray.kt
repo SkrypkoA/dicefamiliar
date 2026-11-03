@@ -64,6 +64,9 @@ import com.skrypko.dicefamiliar.ui.theme.themeDiceColors
 import com.skrypko.dicefamiliar.ui.theme.tray.themedTray
 import com.skrypko.dicefamiliar.ui.theme.tray.trayColors
 import com.skrypko.dicefamiliar.R
+import com.skrypko.dicefamiliar.ui.common.ShareMenuButton
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.background
 import com.skrypko.dicefamiliar.ui.dice.render3d.Dice3DCanvas
 import com.skrypko.dicefamiliar.ui.dice.render3d.Die3D
 import com.skrypko.dicefamiliar.ui.dice.render3d.Percentile
@@ -265,7 +268,13 @@ private fun RollRecord.slots(): List<List<Die3D>> = outcome.groups.flatMap { gro
 
 /** Compact "notation = total" line shown under the tray. */
 @Composable
-fun RollSumBar(state: DiceUiState, modifier: Modifier = Modifier, onShowHistory: (() -> Unit)? = null) {
+fun RollSumBar(
+    state: DiceUiState,
+    modifier: Modifier = Modifier,
+    onShowHistory: (() -> Unit)? = null,
+    onShareText: (() -> Unit)? = null,
+    onShareImage: (() -> Unit)? = null,
+) {
     val record = state.pending ?: state.latest ?: return
     val rolling = state.pending != null
     val total = record.outcome.total
@@ -291,10 +300,19 @@ fun RollSumBar(state: DiceUiState, modifier: Modifier = Modifier, onShowHistory:
                 maxLines = 2,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = 16.dp, end = if (onShowHistory == null) 16.dp else 0.dp)
+                    .padding(start = 16.dp, end = if (onShowHistory == null && onShareText == null) 16.dp else 0.dp)
                     .padding(vertical = 10.dp)
                     .semantics { contentDescription = description },
             )
+            if (onShareText != null && onShareImage != null) {
+                ShareMenuButton(
+                    contentDescription = stringResource(R.string.dice_share),
+                    onShareText = onShareText,
+                    onShareImage = onShareImage,
+                    enabled = !rolling,
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                )
+            }
             if (onShowHistory != null) {
                 IconButton(onClick = onShowHistory) {
                     Icon(
@@ -337,7 +355,7 @@ private fun SwipeHint(animated: Boolean) {
 }
 
 @Composable
-private fun ResultDie(sides: Int, value: Int, kept: Boolean, animated: Boolean, delayIndex: Int, key: Int, size: Dp) {
+internal fun ResultDie(sides: Int, value: Int, kept: Boolean, animated: Boolean, delayIndex: Int, key: Int, size: Dp) {
     val appear = remember(key, delayIndex) { Animatable(if (animated) 0f else 1f) }
     if (animated) {
         LaunchedEffect(key, delayIndex) {
@@ -360,4 +378,48 @@ private fun ResultDie(sides: Int, value: Int, kept: Boolean, animated: Boolean, 
             .alpha(if (kept) appear.value else appear.value * 0.38f)
             .semantics { contentDescription = description },
     )
+}
+
+/** The roll as text, e.g. "2d6+1d4+3 = 13 · [3 5] [2]" (dropped dice in parentheses). */
+fun RollRecord.shareText(): String {
+    val dice = outcome.groups.joinToString(" ") { group ->
+        group.dice.joinToString(" ", "[", "]") { if (it.kept) "${it.value}" else "(${it.value})" }
+    }
+    return listOfNotNull(label, "$notation = ${outcome.total}", dice).joinToString(" · ")
+}
+
+/** The picture shared by "Share as image": the formula, each die (in the active skin) and the total, on the tray. */
+@Composable
+internal fun RollSnapshot(record: RollRecord) {
+    val shape = MaterialTheme.shapes.extraLarge
+    val inset = com.skrypko.dicefamiliar.ui.theme.LocalThemeStyle.current.tray.contentInset
+    val colors = trayColors()
+    Column(
+        Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(record.notation, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
+        Column(
+            Modifier.fillMaxWidth().themedTray(shape).padding(20.dp + inset),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                record.outcome.groups.forEach { group ->
+                    group.dice.forEachIndexed { index, die ->
+                        ResultDie(group.term.sides, die.value, die.kept, animated = false, delayIndex = index, key = 0, size = 72.dp)
+                    }
+                }
+            }
+            Text(
+                record.outcome.total.toString(),
+                style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
+                color = colors.accent,
+            )
+        }
+    }
 }

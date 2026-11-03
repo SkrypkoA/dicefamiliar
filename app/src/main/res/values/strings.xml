@@ -3,6 +3,8 @@
 
     <!-- Common -->
     <string name="action_cancel">Cancel</string>
+    <string name="share_as_text">Share as text</string>
+    <string name="share_as_image">Share as image</string>
 
     <!-- Bottom navigation -->
     <string name="tab_number">Number</string>
@@ -57,6 +59,7 @@
     <string name="dice_result_kept">d%1$d rolled %2$d</string>
     <string name="dice_result_dropped">d%1$d rolled %2$d, dropped</string>
     <string name="dice_recent">Recent rolls</string>
+    <string name="dice_share">Share roll</string>
     <string name="dice_rolling">Rolling…</string>
 
     <!-- Dice: notation errors -->
@@ -295,8 +298,6 @@
     <string name="cards_action_hand_to_deck">Hand → deck</string>
     <string name="cards_share">Share hand</string>
     <string name="cards_share_text">%1$s: %2$s</string>
-    <string name="cards_share_as_text">Share as text</string>
-    <string name="cards_share_as_image">Share as image</string>
     <string name="cards_panel_hide">Hide table controls</string>
     <string name="cards_panel_show">Show table controls</string>
     <string name="cards_close">Close</string>

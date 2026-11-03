@@ -15,6 +15,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,7 +36,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -65,6 +65,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
@@ -93,7 +94,10 @@ import com.skrypko.dicefamiliar.domain.number.NumberFormatter
 import com.skrypko.dicefamiliar.domain.number.NumberLimits
 import com.skrypko.dicefamiliar.domain.number.NumberMode
 import com.skrypko.dicefamiliar.domain.number.NumberResult
+import com.skrypko.dicefamiliar.ui.common.CaptureAsImage
 import com.skrypko.dicefamiliar.ui.common.HelpButton
+import com.skrypko.dicefamiliar.ui.common.ShareMenuButton
+import com.skrypko.dicefamiliar.ui.common.shareImage
 import com.skrypko.dicefamiliar.ui.common.HelpSheet
 import com.skrypko.dicefamiliar.ui.common.HelpTopic
 import com.skrypko.dicefamiliar.ui.common.StepperArrows
@@ -174,6 +178,9 @@ fun NumberScreen(viewModel: NumberViewModel = hiltViewModel()) {
                     .putExtra(Intent.EXTRA_TEXT, result.text)
                 context.startActivity(Intent.createChooser(send, resources.getString(R.string.number_share)))
             },
+            onShareImage = { image ->
+                scope.launch { shareImage(context, image, "numbers.png", resources.getString(R.string.number_share)) }
+            },
         )
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
     }
@@ -199,9 +206,19 @@ fun NumberContent(
     onClearHistory: () -> Unit = {},
     onCopy: (NumberResult) -> Unit = {},
     onShare: (NumberResult) -> Unit = {},
+    onShareImage: (ImageBitmap) -> Unit = {},
 ) {
     var showHistory by rememberSaveable { mutableStateOf(false) }
+    var capturing by remember { mutableStateOf(false) }
     val older = state.recent.drop(1)
+    // "Share as image": the latest result is rendered off screen, captured once, then shared.
+    val shared = state.latest
+    if (capturing && shared != null) {
+        CaptureAsImage(onCaptured = { image ->
+            capturing = false
+            onShareImage(image)
+        }) { NumberSnapshot(shared) }
+    }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -225,6 +242,7 @@ fun NumberContent(
             state = state,
             onCopy = onCopy,
             onShare = onShare,
+            onShareImage = { capturing = true },
             onShowHistory = if (older.isNotEmpty()) ({ showHistory = true }) else null,
             modifier = Modifier.weight(1f).fillMaxWidth(),
         )
@@ -415,6 +433,7 @@ private fun ResultArea(
     state: NumberUiState,
     onCopy: (NumberResult) -> Unit,
     onShare: (NumberResult) -> Unit,
+    onShareImage: () -> Unit,
     onShowHistory: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
@@ -443,9 +462,12 @@ private fun ResultArea(
                 IconButton(onClick = { latest?.let(onCopy) }, enabled = actionsEnabled) {
                     Icon(Icons.Filled.ContentCopy, contentDescription = stringResource(R.string.number_copy))
                 }
-                IconButton(onClick = { latest?.let(onShare) }, enabled = actionsEnabled) {
-                    Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.number_share))
-                }
+                ShareMenuButton(
+                    contentDescription = stringResource(R.string.number_share),
+                    onShareText = { latest?.let(onShare) },
+                    onShareImage = onShareImage,
+                    enabled = actionsEnabled,
+                )
                 IconButton(onClick = { onShowHistory?.invoke() }, enabled = onShowHistory != null) {
                     Icon(Icons.Filled.History, contentDescription = stringResource(R.string.number_history))
                 }
@@ -528,6 +550,54 @@ private fun ResultValues(result: NumberResult) {
             style = MaterialTheme.typography.titleMedium,
             color = trayColors().muted,
         )
+    }
+}
+
+/** The picture shared by "Share as image": the range, then the numbers (and their sum) on the theme's tray. */
+@Composable
+private fun NumberSnapshot(result: NumberResult) {
+    val shape = MaterialTheme.shapes.extraLarge
+    val colors = trayColors()
+    Column(
+        Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(rangeCaption(result), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
+        Column(
+            Modifier.fillMaxWidth().themedTray(shape).padding(24.dp + LocalThemeStyle.current.tray.contentInset),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            if (result.values.size == 1) {
+                Text(
+                    NumberFormatter.format(result.values.single(), result.decimals),
+                    style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold),
+                    color = colors.accent,
+                )
+            } else {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    result.values.forEach { value ->
+                        Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
+                            Text(
+                                NumberFormatter.format(value, result.decimals),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontFamily = FontFamily.Monospace,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            )
+                        }
+                    }
+                }
+                Text(
+                    stringResource(R.string.number_sum, NumberFormatter.format(result.sum, result.decimals)),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = colors.muted,
+                )
+            }
+        }
     }
 }
 

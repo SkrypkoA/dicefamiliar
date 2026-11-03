@@ -134,6 +134,7 @@ class NumberContentTest {
         compose.onNodeWithContentDescription("Recent results").assertIsNotEnabled()
         compose.onNodeWithContentDescription("Copy result").assertIsEnabled().performClick()
         compose.onNodeWithContentDescription("Share result").performClick()
+        compose.onNodeWithText("Share as text").performClick()
         assertEquals(listOf(result), copied)
         assertEquals(listOf(result), shared)
     }
