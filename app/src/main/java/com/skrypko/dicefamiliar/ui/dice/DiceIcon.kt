@@ -114,12 +114,17 @@ private fun PercentilePair(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        // One pill behind both kites so the pair reads as a single d100.
+        // On the palette button (no labels) one pill groups both kites into a single d100;
+        // roll results show the two dice without a backdrop.
         Box(
-            Modifier
-                .clip(RoundedCornerShape(50))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .padding(horizontal = size * 0.05f, vertical = size * 0.03f),
+            if (labels == null) {
+                Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(horizontal = size * 0.05f, vertical = size * 0.03f)
+            } else {
+                Modifier
+            },
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(-(kite * 0.3f))) {
                 DiceIcon(

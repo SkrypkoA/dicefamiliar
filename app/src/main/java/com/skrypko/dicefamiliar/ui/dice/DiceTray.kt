@@ -165,7 +165,6 @@ private fun SolidDice(state: DiceUiState, record: RollRecord, direction: Offset)
     }
     val slots = record.slots()
     val shown = slots.take(MAX_3D_DICE)
-    val scheme = MaterialTheme.colorScheme
     val diceDefaults = themeDiceColors()
     val skin = state.skin
     val resources = LocalContext.current.resources
@@ -184,7 +183,6 @@ private fun SolidDice(state: DiceUiState, record: RollRecord, direction: Offset)
     Box(Modifier.fillMaxSize()) {
         Dice3DCanvas(
             slots = shown,
-            groupColor = scheme.surfaceVariant,
             progress = progress.value,
             directionX = direction.x,
             directionY = direction.y,
