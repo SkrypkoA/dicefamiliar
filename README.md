@@ -16,6 +16,28 @@
 
 ---
 
+## Contents
+
+- [Features](#features)
+  - [Dice roller](#dice-roller)
+  - [Settings](#settings)
+- [Custom dice skins](#custom-dice-skins)
+  - [Option 1: upload a ZIP pack](#option-1-upload-a-zip-pack)
+  - [Option 2: build a set in the app](#option-2-build-a-set-in-the-app)
+  - [Image requirements](#image-requirements)
+  - [Try the examples](#try-the-examples)
+- [Requirements](#requirements)
+- [Build and run](#build-and-run)
+- [Tests and checks](#tests-and-checks)
+- [Tech stack](#tech-stack)
+- [Project structure](#project-structure)
+- [Dice notation](#dice-notation)
+- [Tools](#tools)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
 ## Features
 
 | Feature | Status |
