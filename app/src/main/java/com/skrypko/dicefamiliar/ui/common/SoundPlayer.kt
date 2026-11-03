@@ -14,6 +14,8 @@ import javax.inject.Singleton
 enum class Sound(@param:RawRes val resId: Int) {
     DICE_ROLL(R.raw.dice_roll),
     NUMBER_GENERATED(R.raw.number_tick),
+    CARD_FLICK(R.raw.card_flick),
+    CARD_SHUFFLE(R.raw.card_shuffle),
 }
 
 interface SoundPlayer {

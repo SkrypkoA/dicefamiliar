@@ -1,17 +1,19 @@
 <h1 align="center">Dice Familiar</h1>
 
 <p align="center">
-  An Android app for tabletop players: roll dice in 3D and generate random numbers, and later draw cards and pick from lists.
+  An Android app for tabletop players: roll dice in 3D, draw cards, and generate random numbers; pick from lists is next.
 </p>
 
 <p align="center">
   <a href="https://github.com/SkrypkoA/dicefamiliar/raw/master/apk/dicefamiliar.apk"><b>📥 Download the app (APK)</b></a>
   &nbsp;·&nbsp;
   <a href="docs/dice-examples/"><b>🎨 Dice skins examples</b></a>
+  &nbsp;·&nbsp;
+  <a href="docs/card-decks.md"><b>🃏 Card deck examples</b></a>
 </p>
 
 <p align="center">
-  <sub>Install the APK on Android 7.0+ (allow installs from unknown sources). Then upload a skin from <code>docs/dice-examples/</code> in Settings → Dice sets → Upload ZIP. <a href="#custom-dice-skins">How it works</a>.</sub>
+  <sub>Install the APK on Android 7.0+ (allow installs from unknown sources). Then upload a skin from <code>docs/dice-examples/</code> in Settings → Dice sets → Upload ZIP, or a deck from <code>docs/card-examples/</code> in Settings → Cards → Upload deck. <a href="#custom-dice-skins">Dice skins</a> · <a href="#custom-card-decks">Card decks</a>.</sub>
 </p>
 
 ---
@@ -21,6 +23,7 @@
 - [Features](#features)
   - [Dice roller](#dice-roller)
   - [Random number generator](#random-number-generator)
+  - [Card drawer](#card-drawer)
   - [Themes](#themes)
   - [Settings](#settings)
 - [Custom dice skins](#custom-dice-skins)
@@ -28,6 +31,7 @@
   - [Option 2: build a set in the app](#option-2-build-a-set-in-the-app)
   - [Image requirements](#image-requirements)
   - [Try the examples](#try-the-examples)
+- [Custom card decks](#custom-card-decks)
 - [Requirements](#requirements)
 - [Build and run](#build-and-run)
 - [Tests and checks](#tests-and-checks)
@@ -49,7 +53,7 @@
 | 🎨 **Themes:** Classic, Tavern, Cyberpunk | ✅ Done |
 | 🔢 **Random number generator** | ✅ Done |
 | 📋 Pool picker (named lists with images, CSV/ZIP import & export) | 🚧 Planned |
-| 🃏 Card drawer (52 cards, jokers, multiple decks) | 🚧 Planned |
+| 🃏 **Card drawer:** 36 / 52 / 54-card decks, custom and uploaded decks | ✅ Done |
 | 📡 LAN play: ask another player's phone to roll | 🚧 Planned (the request/response layer is ready) |
 
 ### Dice roller
@@ -79,6 +83,32 @@
   - **Recent results** keeps the last 20 in a history sheet, which you can clear.
 - **Sound, haptics and animations** follow the app settings. Every value is equally likely, and the generator uses `SecureRandom`.
 
+### Card drawer
+A card table with a **draw pile**, a **discard pile** and **your hand** (a fan at the bottom).
+
+| Do this | To |
+|---|---|
+| Tap the deck | draw a card into your hand |
+| Long-press the deck | shuffle the deck |
+| Tap the discard pile | take its top card back into your hand |
+| Long-press the discard pile | shuffle the discard pile |
+| Drag the discard pile onto the deck | turn the discard over on top of the deck (no shuffle) |
+| Drag a hand card onto the deck or the discard pile | put it **on top** of that pile |
+| Swipe a hand card **up** | discard that card |
+| **Long-press the hand**, then drag it onto a pile | put the whole hand on top of that pile (let go elsewhere to cancel) |
+| Drag a big hand sideways | scroll through it (cards shrink first; every value stays visible) |
+| Tap a hand card | see it full screen |
+
+- **Classic card faces:** number cards show the right number of suit symbols in the traditional layout, and Jacks, Queens and Kings have their own (original) double-headed portraits.
+- **Moving never shuffles:** cards, the hand and the discard pile dropped on a pile go on top of it, with the card sound; while several cards move they show as a small pile under your finger. Shuffle with a long-press.
+- **Top bar:** the deck list, **Share** (your hand as text or as a picture), the buttons toggle and Reset. The chevron under it hides the bar for more room (remembered), like the dice panel.
+- Nothing spills over the table's edge: cards are clipped at the border (inside the wooden rim in Tavern).
+- **Buttons instead of gestures:** the hand-pointer icon at the top shows a button for every action (remembered).
+- **Reset** shuffles every card back into the deck. **?** explains everything on the screen.
+- **Decks** (the cards icon at the top left): **36** (6–A), **52** and **54** cards (with two jokers), **custom decks** you pick from the 54 cards (jokers listed first, so they are easy to leave out), and **decks you upload** in Settings → Cards. The last deck you used opens next time; the default is 52 cards.
+- The current deck's table (deck, hand, discard) is kept when you close the app; picking another deck starts it freshly shuffled.
+- Sounds (card flick, riffle shuffle), haptics and animations follow the app settings. The table is green felt in Tavern and a neon grid in Cyberpunk.
+
 ### Themes
 Pick one in **Settings → Appearance**. Each card shows a small preview of the theme.
 
@@ -94,6 +124,7 @@ Every screen also has a **?** button that explains how to use it, for example ho
 - **Appearance:** the theme, plus dark mode and dynamic colours for Classic.
 - **Sounds, Animations, Haptic feedback, Quick roll**
 - **Dice sets:** choose the active skin, upload a ZIP, create, edit and delete your own sets. The **?** button lists the image requirements.
+- **Cards:** upload a deck (ZIP or CSV, up to 1000 cards) and delete uploaded decks. The **?** button lists the formats.
 - Settings is a tab in the bottom bar.
 - The app reopens on the last tab you used.
 
@@ -171,6 +202,30 @@ Then **Settings → Dice sets → Upload ZIP** and pick the file from Downloads.
 
 ---
 
+## Custom card decks
+Upload your own deck in **Settings → Cards → Upload deck** — up to **1000 cards**, in one of three forms:
+
+1. **ZIP with `cards.csv` and images** — the CSV (`name,value,suit,image`, header optional) lists the cards; `image` is a path inside the ZIP.
+2. **ZIP of images only** — one card per image in file-name order, named after the file (`the_tower.png` → "the tower").
+3. **A plain CSV** — text cards (value in the corner, name and suit in the middle).
+
+```
+my_deck.zip
+├── cards.csv      (optional)
+├── back.png       (optional card back)
+└── images/
+    ├── rams_01.png
+    └── crows_13.png
+```
+
+Images: PNG / JPG / WebP, portrait 5 : 7 (e.g. 500 × 700 px), ≤ 10 MB each; a ZIP ≤ 200 MB. Full guide: **[docs/card-decks.md](docs/card-decks.md)**.
+
+**Examples** in [`docs/card-examples/`](docs/card-examples/): `omens.zip` (54 cards with four original suits — Rams, Crows, Books, Masks — and two jokers), `runes.zip` (images only) and `tarot-major.csv` (plain CSV).
+
+```bash
+adb push docs/card-examples/omens.zip /sdcard/Download/   # then Settings → Cards → Upload deck
+```
+
 ## Requirements
 - **Android 7.0+** (minSdk 24), targeting API 37
 - To build it:
@@ -231,14 +286,14 @@ export JAVA_HOME=/snap/android-studio/current/jbr   # path depends on how Androi
 
 ```
 app/src/main/java/com/skrypko/dicefamiliar/
-├── ui/            Compose screens + ViewModels (dice, settings, navigation, theme, common)
+├── ui/            Compose screens + ViewModels (dice, number, cards, settings, navigation, theme, common)
 │   └── dice/
 │       └── render3d/   pseudo-3D dice: convex meshes, shading, numbers on faces
-├── domain/        pure Kotlin: dice (parser, roller, editor), number (parser, generator), random, remote, settings
-├── data/          DataStore repositories, the dice-set loader
+├── domain/        pure Kotlin: dice (parser, roller, editor), number (parser, generator), cards (decks, table, CSV/ZIP import), random, remote, settings
+├── data/          DataStore repositories, the dice-set and card-deck stores
 └── di/            Hilt modules
-docs/              designer guide for dice sets, SVG templates, example packs
-tools/             generators: dice-set templates and examples, sounds
+docs/              guides for dice sets and card decks, SVG templates, example packs and decks
+tools/             generators: dice-set templates and examples, example card decks, sounds
 ```
 
 ## Dice notation
@@ -269,6 +324,8 @@ Generators for the app's assets. Run them from the repository root with Python 3
 | `tools/segment_font.py` | the seven-segment number font used by `neon.zip` (`python3 tools/segment_font.py out.ttf`) | Python 3 |
 | `tools/gen_dice_sound.py` | the roll sound `res/raw/dice_roll.ogg` | Python 3 + ffmpeg |
 | `tools/gen_number_sound.py` | the number generator chime `res/raw/number_tick.ogg` | Python 3 + ffmpeg |
+| `tools/gen_card_sounds.py` | card flick and shuffle `res/raw/card_flick.ogg`, `card_shuffle.ogg` | Python 3 + ffmpeg |
+| `tools/gen_card_examples.py` | example decks in `docs/card-examples/` | Python 3 + Pillow |
 | `tools/gen_app_icon.py` | the adaptive launcher icon in `res/drawable/` | Python 3 |
 | `tools/render_legacy_icons.sh` | legacy launcher PNGs for API 24–25 in `res/mipmap-*/` | Python 3 + ImageMagick 7 (`magick`) |
 

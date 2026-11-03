@@ -1,5 +1,15 @@
 package com.skrypko.dicefamiliar.testing
 
+import com.skrypko.dicefamiliar.data.cards.CardDeckImportOutcome
+import com.skrypko.dicefamiliar.data.cards.CardDeckRepository
+import com.skrypko.dicefamiliar.data.cards.CardTableRepository
+import com.skrypko.dicefamiliar.data.cards.CustomDeck
+import com.skrypko.dicefamiliar.data.cards.DeckInfo
+import com.skrypko.dicefamiliar.domain.cards.CardTable
+import com.skrypko.dicefamiliar.domain.cards.DeckDefinition
+import com.skrypko.dicefamiliar.domain.cards.DeckKind
+import com.skrypko.dicefamiliar.domain.cards.DeckPresets
+import com.skrypko.dicefamiliar.domain.cards.io.CardDeckImportError
 import com.skrypko.dicefamiliar.data.dice.DiceSetDetails
 import com.skrypko.dicefamiliar.data.dice.DiceSetImportOutcome
 import com.skrypko.dicefamiliar.data.dice.DiceSetInfo
@@ -152,4 +162,46 @@ class FakeDiceSetRepository(private val skin: DiceSkin = DiceSkin.Default) : Dic
     override suspend fun removeDieImage(id: String, key: String, slot: DieImageSlot) {
         manifests.value[id]?.let { manifests.value += id to DiceSetEditor.withImage(it, key, slot, null) }
     }
+}
+
+/** In-memory decks: the three presets plus custom decks created through [saveCustom]. */
+class FakeCardDeckRepository : CardDeckRepository {
+    val custom = MutableStateFlow<Map<String, CustomDeck>>(emptyMap())
+    val selected = MutableStateFlow(DeckPresets.DEFAULT_ID)
+    var importOutcome: CardDeckImportOutcome = CardDeckImportOutcome.Failed(CardDeckImportError.NOT_A_ZIP)
+
+    override val decks: Flow<List<DeckInfo>> = custom.map { all ->
+        DeckPresets.ids.map { id -> DeckPresets.get(id)!!.let { DeckInfo(id, it.name, DeckKind.PRESET, it.cards.size, it.cards.size) } } +
+            all.values.map { DeckInfo(it.id, it.name, DeckKind.CUSTOM, it.cardIds.size) }
+    }
+    override val selectedDeckId: Flow<String> = selected
+    override suspend fun select(id: String) { selected.value = id }
+    override suspend fun deck(id: String): DeckDefinition? =
+        DeckPresets.get(id) ?: custom.value[id]?.let { DeckPresets.standardDeck(it.id, it.name, DeckKind.CUSTOM, it.cardIds) }
+    override suspend fun customDeck(id: String): CustomDeck? = custom.value[id]
+    override suspend fun saveCustom(id: String?, name: String, cardIds: List<String>): String {
+        val deckId = id ?: "custom-${custom.value.size + 1}"
+        custom.value += deckId to CustomDeck(deckId, name, cardIds)
+        return deckId
+    }
+    override suspend fun delete(id: String) {
+        custom.value -= id
+        if (selected.value == id) selected.value = DeckPresets.DEFAULT_ID
+    }
+    override suspend fun importDeck(source: StreamSource, fileName: String?): CardDeckImportOutcome = importOutcome
+}
+
+class FakeCardTableRepository : CardTableRepository {
+    val saved = mutableMapOf<String, CardTable>()
+    private val buttons = MutableStateFlow(false)
+    override suspend fun load(deckId: String, deckSize: Int): CardTable? = saved[deckId]?.takeIf { it.isValidFor(deckSize) }
+    override suspend fun save(deckId: String, table: CardTable) {
+        saved.clear()
+        saved[deckId] = table
+    }
+    override val showButtons: Flow<Boolean> = buttons
+    override suspend fun setShowButtons(show: Boolean) { buttons.value = show }
+    private val panel = MutableStateFlow(true)
+    override val panelVisible: Flow<Boolean> = panel
+    override suspend fun setPanelVisible(visible: Boolean) { panel.value = visible }
 }

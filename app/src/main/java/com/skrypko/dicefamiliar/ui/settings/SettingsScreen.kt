@@ -46,6 +46,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -59,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.skrypko.dicefamiliar.R
+import kotlinx.coroutines.launch
 import com.skrypko.dicefamiliar.data.dice.DiceSetImportOutcome
 import com.skrypko.dicefamiliar.data.dice.DiceSetInfo
 import com.skrypko.dicefamiliar.domain.dice.skin.DiceSetImportError
@@ -80,6 +82,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val resources = LocalResources.current
     val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
@@ -114,6 +117,7 @@ fun SettingsScreen(
             onDeleteDiceSet = viewModel::deleteDiceSet,
             onCreateDiceSet = viewModel::createDiceSet,
             onImportDiceSet = { importLauncher.launch(ZIP_MIME_TYPES) },
+            cardsSection = { CardDecksSection(onMessage = { text -> scope.launch { snackbar.showSnackbar(text) } }) },
         )
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
     }
@@ -136,6 +140,7 @@ fun SettingsContent(
     onDeleteDiceSet: (String) -> Unit = {},
     onCreateDiceSet: (String) -> Unit = {},
     onImportDiceSet: () -> Unit = {},
+    cardsSection: @Composable () -> Unit = {},
 ) {
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         SectionHeader(R.string.settings_section_appearance)
@@ -161,6 +166,9 @@ fun SettingsContent(
             onCreate = onCreateDiceSet,
             onImport = onImportDiceSet,
         )
+        HorizontalDivider(Modifier.padding(top = 8.dp))
+        SectionHeader(R.string.settings_section_cards)
+        cardsSection()
         Spacer(Modifier.size(24.dp))
     }
 }

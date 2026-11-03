@@ -1,5 +1,9 @@
 package com.skrypko.dicefamiliar.di
 
+import com.skrypko.dicefamiliar.data.cards.CardDeckRepository
+import com.skrypko.dicefamiliar.data.cards.CardTableRepository
+import com.skrypko.dicefamiliar.data.cards.DataStoreCardTableRepository
+import com.skrypko.dicefamiliar.data.cards.FileCardDeckRepository
 import com.skrypko.dicefamiliar.data.dice.DefaultDiceSetRepository
 import com.skrypko.dicefamiliar.data.dice.DataStoreDiceStateRepository
 import com.skrypko.dicefamiliar.data.dice.DiceSetRepository
@@ -27,6 +31,12 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindDiceState(impl: DataStoreDiceStateRepository): DiceStateRepository
+
+    @Binds
+    abstract fun bindCardDecks(impl: FileCardDeckRepository): CardDeckRepository
+
+    @Binds
+    abstract fun bindCardTable(impl: DataStoreCardTableRepository): CardTableRepository
 
     @Binds
     abstract fun bindNumberState(impl: DataStoreNumberStateRepository): NumberStateRepository

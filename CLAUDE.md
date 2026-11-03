@@ -34,7 +34,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 1. **Random Number Generator** – generate one or more random integers (or decimals) within a user-defined range.
 2. **Pool Picker** – pick one or more random values from a user-defined list (with or without repetition).
 3. **Dice Roller** – simulate rolling standard and custom dice (d4, d6, d8, d10, d12, d20, d100, dN), including dice notation like `3d6+2`.
-4. **Card Drawer** – draw cards from a standard 52-card deck (optionally with jokers), with shuffle, draw, and reset.
+4. **Card Drawer** – a card table (draw pile, hand, discard) for 36 / 52 / 54-card decks, custom decks and uploaded decks, driven by gestures.
 
 ## Tech Stack
 
@@ -65,7 +65,7 @@ app/src/main/java/com/skrypko/dicefamiliar/
 │   │   ├── edit/          # Edit Pool form, item editor, import/export dialogs
 │   │   └── pick/          # Pick screen
 │   ├── dice/              # Dice roller screen + ViewModel
-│   ├── cards/             # Card drawer screen + ViewModel
+│   ├── cards/             # Card table, deck list, custom deck editor, PlayingCard
 │   ├── settings/          # App-wide Settings screen; dicesets/ = dice-set editor + help sheet
 │   └── common/            # Shared UI: SoundPlayer, StepperNumberField, HelpButton/HelpSheet
 ├── domain/
@@ -74,7 +74,7 @@ app/src/main/java/com/skrypko/dicefamiliar/
 │   ├── pool/              # Pool picking logic, validation, display mode
 │   │   └── io/            # CSV/ZIP read & write, unique-name resolver
 │   ├── dice/              # Dice model, notation parser, roller, NotationEditor, DiceRollAction
-│   ├── cards/             # Card, Suit, Rank, Deck
+│   ├── cards/             # CardFace, StandardCards, DeckPresets, CardTable; io/ = CSV + ZIP deck import
 │   ├── remote/            # Feature-agnostic remote actions (LAN-ready): envelopes, registry, codec
 │   └── settings/          # AppSettings (app-wide preferences)
 └── data/                  # DataStore / Room repositories (settings/, dice/, number/, remote/)
@@ -210,9 +210,43 @@ The display mode is worked out from the whole pool, not item by item. It applies
 - **LAN-ready:** rolls go through `DiceRollAction` (`dice.roll`, v1) and `DiceRollHandler` via the shared remote-action layer. The notation string is the wire format; the rolling device re-parses it as untrusted input and owns the randomness.
 
 ### Card Drawer
-- Standard 52-card deck, optional jokers, optional multiple decks.
-- Actions: shuffle, draw N, return all & reshuffle; show remaining count and drawn cards.
-- Deck state survives configuration changes (kept in ViewModel / SavedStateHandle).
+- **Model (`domain/cards/`):**
+  - `CardFace(name, value, suit, image, standardId)`.
+  - `StandardCards` gives ids like `AS`, `10H`, `JR`, `JB`, and the presets 36 (6–A), 52 and 54 (`all54` lists the **jokers first**).
+  - `DeckPresets`: `preset-36`, `preset-52`, `preset-54`; the default is `preset-52`.
+  - **`CardTable(drawPile, hand, discard)` holds card indices**, with the top card last. Its operations are draw, takeFromDiscard, discard(card), putOnDraw(card), discardHand, handToDraw, discardOntoDraw, shuffleDraw, shuffleDiscard and reset. They return a new table, and invalid ones are no-ops. Shuffles use `RandomSource.shuffle`.
+- **Table screen (`ui/cards/CardTableScreen`):** the draw and discard piles sit on the theme's tray, with the hand below them.
+  - **Gestures:**
+    - tap the deck → draw; long-press it → shuffle
+    - tap the discard → take its top card; long-press it → shuffle the discard
+    - drag the discard onto the deck → `discardOntoDraw()`: the pile is turned over on top, **not shuffled**
+    - drag a hand card onto a pile → **on top** of it (`putOnDraw(card)` / `discard(card)`); swipe it up ≥ 64 dp elsewhere → discard. A card drag must start mostly vertical; a sideways start scrolls the hand.
+    - **long-press the hand** (detected in the Initial pass, so it wins over the cards' own gestures) → the whole hand follows the finger; dropped on a pile it goes **on top** (`handToDraw()` / `discardHand()`), elsewhere it springs back. There is no wide-swipe discard.
+    - tap a card → full-screen view
+  - **Hand layout:** a fan that fits the width, with room kept for tilt and arc. Bigger hands shrink the cards (down to `MIN_CARD` of the width) while keeping `MIN_VISIBLE` (30 %) of each card visible. After that the hand becomes a flat row that scrolls sideways (with fling, and new cards scroll into view).
+  - **Moves never shuffle:** dropping a card, the hand or the discard pile on a pile puts them on top, with the flick sound and no shake. Only the long-press shuffles and Reset shuffle (shake plus riffle sound). While several cards are carried (the hand, or the discard pile), they are drawn as a small pile of the top 3 under the finger (`PileTargets.carried`, an overlay in the play area).
+  - **Edges:** the play area clips its content at the table edge (inside the rim, if the tray has one).
+  - **Piles:** each pile shakes on its own when shuffled. `PileTargets` holds both piles' bounds for every drop.
+  - **Standard faces** (`ui/cards/CardFaceArt`): vector suit shapes (never emoji), pips in the traditional layout (`PipLayout`, unit-tested), and original double-headed court portraits for J, Q and K.
+  - **Top bar** (collapsible with a chevron, persisted in `cards.panel_visible`):
+    - the deck-list icon (the theme's cards icon)
+    - Share: a menu with "Share as text" (`ACTION_SEND`) and "Share as image" (the hand on the theme's table, rendered off screen by `CaptureAsImage` and shared as a PNG through `shareImage`)
+    - the buttons toggle (persisted in `cards.show_buttons`), which shows buttons for every action, including "Hand → deck"
+    - Reset (with a confirm dialog)
+  - "?" sits next to the chevron. Pile and card semantics expose every action for accessibility.
+- **Decks:** a deck list (presets, then custom, then uploaded) and a custom deck editor that picks from the 54 cards, jokers first, with "All" per group. Both are routes under the Cards tab.
+  - The selected deck is in DataStore (`cards.selected_deck`; an unknown id falls back to the default).
+  - **Only the current deck's table is saved** (`cards.table`, JSON). Picking another deck starts it fresh and shuffled.
+- **Upload** (Settings → Cards, `CardDecksSection`): up to **1000 cards** per deck. Uploaded decks live in `filesDir/card_decks/<id>/` (`deck.json` + `images/`); custom decks store only standard ids. The full spec is in `docs/card-decks.md`.
+  - **`CardDeckArchiveReader`:**
+    - a ZIP with a root `.csv` (`name,value,suit,image`) plus images, **or** images only (natural file order, the name taken from the file)
+    - `back.*` is the card back
+    - zip-slip rejected; ≤ 1200 entries, ≤ 200 MB unpacked, ≤ 10 MB per image, ≤ 1 MB per CSV
+  - **A plain CSV** gives text cards (`CardCsvParser`, which uses the RFC 4180 `CsvReader` that Pool import can reuse).
+  - Images larger than 1024 px are scaled down.
+  - Example decks in `docs/card-examples/` come from `tools/gen_card_examples.py` (original art) and are checked by `CardExamplesTest`.
+- **LAN (separate feature, not implemented):** a future `cards.draw` remote action will apply `CardTable.draw()` to the **host's** table and return the drawn `CardFace`.
+- **Sounds:** `CARD_FLICK` and `CARD_SHUFFLE` (`tools/gen_card_sounds.py`). Haptics on draw, discard and shuffle.
 
 ### Shared
 - **Settings** (`AppSettings`, DataStore): sounds, animations, haptic feedback (all on by default) and Quick roll (off). Settings is the fifth tab in the bottom navigation bar. The app has no top app bar and no screen titles, and it **reopens on the last selected tab** (`LastTabRepository` plus `NavigationViewModel`). New feature settings get their own section.
@@ -236,6 +270,7 @@ The display mode is worked out from the whole pool, not item by item. It applies
   - The user can type, tap the chevrons, or swipe up or down on the field (`DEFAULT_SWIPE_STEP` per step).
   - `arrows` sets where the chevrons go: `ABOVE_BELOW` (up above the field and down below it, as in the dN dialog), `AFTER` (a compact pair right of the field, as in Min/Max/How many) or `BEFORE` (left of the field).
   - The field is stateless. The caller owns the text and decides what one step means; for example, `NumberStepper` and `DiceLimits.stepSides` live in the domain.
+- **Sharing images:** `ui/common/ShareImage.kt` — `CaptureAsImage` renders any composable off screen into a picture, and `shareImage` saves it in `cache/shared/` and shares it through the app's `FileProvider` (`${applicationId}.files`, `res/xml/file_paths.xml`). Reuse both for any feature that shares a picture.
 - **Sounds:** `SoundPlayer` (`ui/common`); assets are in `res/raw` (`dice_roll.ogg` is generated by `tools/gen_dice_sound.py`).
 - History of recent results per feature (clearable).
 - Copy result to clipboard / share.

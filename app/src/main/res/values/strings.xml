@@ -13,7 +13,6 @@
     <!-- Placeholder screen titles -->
     <string name="title_number">Random number</string>
     <string name="title_pool">Pools</string>
-    <string name="title_cards">Card drawer</string>
 
     <!-- Dice: palette -->
     <string name="dice_name">d%1$d</string>
@@ -78,6 +77,7 @@
     <string name="settings_section_general">General</string>
     <string name="settings_section_dice">Dice</string>
     <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_section_cards">Cards</string>
     <string name="settings_dark_mode">Dark mode</string>
     <string name="dark_mode_system">System</string>
     <string name="dark_mode_light">Light</string>
@@ -235,4 +235,131 @@
     <string name="help_number_results_text">One number is shown large; several are shown as chips with their sum. Copy puts them on the clipboard and Share sends them to another app. The history button lists recent results, and you can clear it there.</string>
     <string name="help_number_memory_title">Remembered</string>
     <string name="help_number_memory_text">Your last range, options and result are kept when you close the app.</string>
+    <!-- Cards -->
+    <plurals name="cards_preset_name">
+        <item quantity="one">%1$d card</item>
+        <item quantity="other">%1$d cards</item>
+    </plurals>
+    <plurals name="cards_count">
+        <item quantity="one">%1$d card</item>
+        <item quantity="other">%1$d cards</item>
+    </plurals>
+    <string name="cards_custom_default_name">My deck</string>
+    <string name="cards_uploaded_default_name">Uploaded deck</string>
+    <string name="cards_decks_title">Decks</string>
+    <string name="cards_section_presets">Standard decks</string>
+    <string name="cards_section_custom">Custom decks</string>
+    <string name="cards_section_uploaded">Uploaded decks</string>
+    <string name="cards_preset_36_summary">6 to Ace in four suits</string>
+    <string name="cards_preset_52_summary">2 to Ace in four suits</string>
+    <string name="cards_preset_54_summary">52 cards and two jokers</string>
+    <string name="cards_new_custom">New custom deck</string>
+    <string name="cards_edit_deck">Edit %1$s</string>
+    <string name="cards_delete_deck">Delete %1$s</string>
+    <string name="cards_delete_title">Delete deck?</string>
+    <string name="cards_delete_text">“%1$s” will be removed from this device.</string>
+    <string name="cards_upload_hint">Upload your own decks in Settings → Cards.</string>
+    <string name="cards_back_to_decks">Choose a deck</string>
+    <string name="cards_custom_title">Custom deck</string>
+    <string name="cards_custom_name">Deck name</string>
+    <string name="cards_custom_selected">%1$d of 54 selected</string>
+    <string name="cards_custom_jokers">Jokers</string>
+    <string name="cards_custom_all">All</string>
+    <string name="cards_custom_save">Save</string>
+    <string name="cards_custom_back">Back</string>
+    <string name="cards_suit_spades">Spades</string>
+    <string name="cards_suit_hearts">Hearts</string>
+    <string name="cards_suit_diamonds">Diamonds</string>
+    <string name="cards_suit_clubs">Clubs</string>
+    <string name="cards_left">%1$d in deck · %2$d in discard</string>
+    <string name="cards_draw_pile">Draw pile: %1$d</string>
+    <string name="cards_discard_pile">Discard pile: %1$d</string>
+    <string name="cards_discard_empty">Discard</string>
+    <string name="cards_deck_empty">Empty</string>
+    <string name="cards_hand_empty">Tap the deck to draw a card</string>
+    <string name="cards_hand">Hand: %1$d</string>
+    <string name="cards_show_buttons">Show action buttons</string>
+    <string name="cards_hide_buttons">Hide action buttons</string>
+    <string name="cards_reset">Reset</string>
+    <string name="cards_reset_title">Reset the table?</string>
+    <string name="cards_reset_text">All cards go back into the deck and it is shuffled.</string>
+    <string name="cards_action_draw">Draw</string>
+    <string name="cards_action_shuffle">Shuffle deck</string>
+    <string name="cards_action_take_discard">Take discard</string>
+    <string name="cards_action_shuffle_discard">Shuffle discard</string>
+    <string name="cards_action_discard_into_deck">Discard → deck</string>
+    <string name="cards_action_discard_hand">Discard hand</string>
+    <string name="cards_action_discard">Discard</string>
+    <string name="cards_action_view">View</string>
+    <string name="cards_action_return">Put on deck</string>
+    <string name="cards_action_hand_to_deck">Hand → deck</string>
+    <string name="cards_share">Share hand</string>
+    <string name="cards_share_text">%1$s: %2$s</string>
+    <string name="cards_share_as_text">Share as text</string>
+    <string name="cards_share_as_image">Share as image</string>
+    <string name="cards_panel_hide">Hide table controls</string>
+    <string name="cards_panel_show">Show table controls</string>
+    <string name="cards_close">Close</string>
+    <string name="cards_joker">JOKER</string>
+    <string name="cards_settings_title">Card decks</string>
+    <string name="cards_upload">Upload deck</string>
+    <string name="cards_upload_help">Card deck requirements</string>
+    <string name="cards_settings_empty">No uploaded decks yet</string>
+    <string name="cards_imported">Deck “%1$s” added (%2$d)</string>
+    <plurals name="cards_skipped">
+        <item quantity="one">%1$d file skipped</item>
+        <item quantity="other">%1$d files skipped</item>
+    </plurals>
+    <plurals name="cards_missing">
+        <item quantity="one">%1$d image missing</item>
+        <item quantity="other">%1$d images missing</item>
+    </plurals>
+    <string name="cards_error_not_zip">This file is not a ZIP or CSV deck</string>
+    <string name="cards_error_unsafe">The ZIP contains unsafe paths</string>
+    <string name="cards_error_too_many">A deck can have at most 1000 cards</string>
+    <string name="cards_error_too_large">The deck is too large</string>
+    <string name="cards_error_no_cards">No cards found in this file</string>
+    <string name="cards_error_bad_csv">The CSV can’t be read (check the quotes)</string>
+    <string name="cards_error_read">The file can’t be read</string>
+    <string name="help_cards_title">How to use the card table</string>
+    <string name="help_cards_button">How to use the card table</string>
+    <string name="help_cards_draw_title">Draw</string>
+    <string name="help_cards_draw_text">Tap the deck (the face-down pile) to take its top card into your hand.</string>
+    <string name="help_cards_shuffle_title">Shuffle</string>
+    <string name="help_cards_shuffle_text">Long-press the deck to shuffle it. Long-press the discard pile to shuffle the discard pile.</string>
+    <string name="help_cards_discard_title">Discard</string>
+    <string name="help_cards_discard_text">Swipe a card in your hand up to discard it, or drag it onto the discard pile. Drag it onto the deck to put it on top of the deck.</string>
+    <string name="help_cards_hand_title">The whole hand</string>
+    <string name="help_cards_hand_text">Long-press your hand to pick up all of it, then drop it on the deck or on the discard pile: the cards go on top. Let go anywhere else to put the hand back.</string>
+    <string name="help_cards_scroll_title">Big hands</string>
+    <string name="help_cards_scroll_text">When your hand is too wide for the table, drag it sideways to scroll through the cards; every value stays visible and the newest card scrolls into view.</string>
+    <string name="help_cards_take_title">Take back</string>
+    <string name="help_cards_take_text">Tap the discard pile to take its top card into your hand.</string>
+    <string name="help_cards_return_title">Discard back into the deck</string>
+    <string name="help_cards_return_text">Drag the discard pile onto the deck to turn it over on top of the deck. Moving cards never shuffles them: cards, hands and piles dropped on a pile go on top of it. Long-press the deck when you want to shuffle.</string>
+    <string name="help_cards_view_title">Look at a card</string>
+    <string name="help_cards_view_text">Tap a card in your hand to see it full screen. Tap again to close.</string>
+    <string name="help_cards_buttons_title">Buttons</string>
+    <string name="help_cards_buttons_text">Prefer buttons? The hand-pointer icon at the top shows buttons for every action. The share icon sends your hand as text or as a picture; the chevron hides the top bar for more room.</string>
+    <string name="help_cards_reset_title">Reset and decks</string>
+    <string name="help_cards_reset_text">Reset shuffles every card back into the deck. The cards icon at the top left opens the deck list: 36, 52 or 54 cards, your custom decks and uploaded decks. Only the current deck’s table is kept when you close the app.</string>
+    <string name="help_decks_title">Decks</string>
+    <string name="help_decks_button">About decks</string>
+    <string name="help_decks_standard_title">Standard decks</string>
+    <string name="help_decks_standard_text">36 cards (6 to Ace), 52 cards, or 54 cards with two jokers. Tap a deck to play with it; a different deck starts freshly shuffled.</string>
+    <string name="help_decks_custom_title">Custom decks</string>
+    <string name="help_decks_custom_text">Tap New custom deck, name it, and tick the cards to include from the 54-card deck. Jokers come first so they are easy to leave out. Edit or delete it with the icons on its row.</string>
+    <string name="help_decks_upload_title">Your own decks</string>
+    <string name="help_decks_upload_text">Upload a deck in Settings → Cards: a ZIP with card images (and an optional CSV), or a CSV of card names. Up to 1000 cards.</string>
+    <string name="cards_help_intro">A deck can have up to 1000 cards. Upload one of three kinds of file:</string>
+    <string name="cards_help_zip_csv_title">1. ZIP with a CSV and images</string>
+    <string name="cards_help_zip_csv_text">A .csv file at the top of the ZIP lists the cards in order. Columns: name, value, suit, image. The header row is optional; image is a path inside the ZIP. Cards without an image are drawn as text.</string>
+    <string name="cards_help_zip_images_title">2. ZIP of images only</string>
+    <string name="cards_help_zip_images_text">One image per card, in file-name order (card2 comes before card10). The card name is the file name: the_tower.png becomes “the tower”.</string>
+    <string name="cards_help_csv_title">3. A plain CSV</string>
+    <string name="cards_help_csv_text">Just the list of cards (name, value, suit). Every card is drawn as text.</string>
+    <string name="cards_help_images_title">Images</string>
+    <string name="cards_help_images_text">• PNG, JPG or WebP, portrait 5:7 (for example 500×700 px); larger images are scaled down to 1024 px.\n• Put back.png (or .jpg, .webp) at the top of the ZIP for the card back; without it, the back follows the app theme.\n• Limits: 10 MB per image, 200 MB per ZIP, 1 MB per CSV.</string>
+    <string name="cards_help_csv_example" translatable="false">name,value,suit,image\nRam 1,1,Rams,images/rams_01.png\nCrow 13,13,Crows,images/crows_13.png\nRed Joker,Joker,,images/joker_red.png</string>
+    <string name="cards_help_zip_tree" translatable="false">my_deck.zip\n├── cards.csv      (optional)\n├── back.png       (optional)\n└── images/\n    ├── rams_01.png\n    └── crows_13.png</string>
 </resources>
