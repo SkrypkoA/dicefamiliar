@@ -2,6 +2,31 @@
 
 This file provides guidance to Claude Code when working with code in this repository.
 
+## Contents
+
+- [Project Overview](#project-overview)
+- [Tech Stack](#tech-stack)
+- [Suggested Project Structure](#suggested-project-structure)
+- [Core Rules](#core-rules)
+- [Feature Details](#feature-details)
+  - [Random Number Generator](#random-number-generator)
+  - [Pool Picker](#pool-picker)
+    - [Pool list screen](#pool-list-screen)
+    - [Edit Pool screen (form)](#edit-pool-screen-form)
+    - [Import (CSV or ZIP)](#import-csv-or-zip)
+    - [Export (CSV or ZIP)](#export-csv-or-zip)
+    - [Item image](#item-image)
+    - [Item color](#item-color)
+    - [Display mode](#display-mode)
+    - [Pick screen](#pick-screen)
+    - [Data model (Room)](#data-model-room)
+  - [Dice Roller](#dice-roller)
+  - [Card Drawer](#card-drawer)
+  - [Shared](#shared)
+- [Common Commands](#common-commands)
+- [Git Workflow Policy](#git-workflow-policy)
+- [Coding Conventions](#coding-conventions)
+
 ## Project Overview
 
 **Dice Familiar** is an Android application for randomness-based utilities:
