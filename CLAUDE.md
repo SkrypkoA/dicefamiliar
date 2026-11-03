@@ -227,10 +227,16 @@ When a feature is done, follow these steps in order:
    git push -u origin feature/<feature-name>
    ```
 6. **Open a pull request** into `master`. The title is the feature name and the body is the feature description: what was added and how to test it.
+   - **Milestone:** every PR goes into the milestone of its feature (one milestone per feature: *Random number generator*, *Pool picker*, *Card drawer*, *LAN play*, …). List them with `gh api repos/{owner}/{repo}/milestones --jq '.[].title'`. If the feature has no milestone yet, create one first.
+   - **Issues:** the planned work is split into issues inside each milestone. End the PR body with `Closes #N` for every issue the PR finishes, so they close on merge.
    ```bash
    gh pr create --base master --head feature/<feature-name> \
-     --title "<Feature name>" --body "<feature description>"
+     --title "<Feature name>" --body "<feature description>
+
+   Closes #N" \
+     --milestone "<Feature milestone>"
    ```
+   When every issue of a milestone is closed and its last PR is merged, close the milestone.
 
 The rule is: one feature means one branch, one squashed commit and one PR. Never merge `master` into a feature branch; always rebase instead.
 
