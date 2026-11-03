@@ -63,7 +63,7 @@ fun DiceIcon(
         base
             .clip(shape)
             .background(colors.fill)
-            .drawBehind { drawFacets(sides, colors.edge) }
+            .drawBehind { drawFacets(sides, colors.edge, labelled = text.isNotEmpty()) }
             .border(skin.edgeWidth, colors.edge, shape)
     }
     Box(decorated, contentAlignment = Alignment.Center) {
@@ -152,8 +152,8 @@ private fun PercentilePair(
     }
 }
 
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFacets(sides: Int, edge: Color) {
-    DiceShapes.facets(sides, size.width, size.height)?.let { path ->
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFacets(sides: Int, edge: Color, labelled: Boolean) {
+    DiceShapes.facets(sides, size.width, size.height, labelled)?.let { path ->
         drawPath(path, color = edge.copy(alpha = 0.35f), style = Stroke(width = 1.5.dp.toPx()))
     }
 }
