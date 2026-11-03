@@ -60,7 +60,10 @@ import androidx.compose.ui.graphics.Color
 import com.skrypko.dicefamiliar.ui.theme.themeDiceColors
 import com.skrypko.dicefamiliar.ui.theme.tray.themedTray
 import com.skrypko.dicefamiliar.ui.theme.tray.trayColors
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalResources
 import com.skrypko.dicefamiliar.R
+import com.skrypko.dicefamiliar.domain.dice.pool.DicePool
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.background
 import com.skrypko.dicefamiliar.ui.dice.render3d.Dice3DCanvas
@@ -70,6 +73,9 @@ import com.skrypko.dicefamiliar.ui.dice.skin.DieColors
 import kotlin.math.hypot
 
 private const val MAX_3D_DICE = 12
+
+/** Pool mode tumbles up to this many dice in 3D (smaller); bigger pools spin in 2D. */
+private const val MAX_3D_POOL_DICE = 30
 private val TRAY_MIN_HEIGHT = 160.dp
 private const val MIN_SWIPE_SPEED = 600f
 
@@ -139,7 +145,22 @@ fun DiceTray(
     ) {
         Box(Modifier.fillMaxSize().padding(12.dp), contentAlignment = Alignment.Center) {
             val shown = state.pending ?: state.latest
+            val pool = state.pool
             when {
+                // Up to 12 dice stay 3D after the roll (Quick roll off); bigger pools and Quick roll use the flat grid.
+                state.poolMode && state.pending == null && pool != null && !state.settings.quickRoll && pool.size <= MAX_3D_DICE ->
+                    PoolSolidDice(state, pool)
+                state.poolMode && state.pending == null && pool != null ->
+                    PoolGrid(pool, state.selectedCriterion, animations, state.rollCount)
+                state.poolMode && state.pending == null && swipeToRoll -> SwipeHint(animations)
+                state.poolMode && state.pending == null -> Text(
+                    stringResource(R.string.dice_tray_empty),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = trayColors().muted,
+                )
+                state.poolMode && shown != null && (state.settings.quickRoll || shown.outcome.expression.diceCount > MAX_3D_POOL_DICE) ->
+                    FlatDice(shown, rolling = true, animations, state.rollCount, minChip = POOL_MIN_DIE)
+                state.poolMode && shown != null -> SolidDice(state, shown, direction, maxDice = MAX_3D_POOL_DICE)
                 shown == null && swipeToRoll -> SwipeHint(animations)
                 shown == null -> Text(
                     stringResource(R.string.dice_tray_empty),
@@ -155,7 +176,7 @@ fun DiceTray(
 
 /** Swipe mode: shaded 3D dice that tumble in the swipe direction and land on the rolled faces. */
 @Composable
-private fun SolidDice(state: DiceUiState, record: RollRecord, direction: Offset) {
+private fun SolidDice(state: DiceUiState, record: RollRecord, direction: Offset, maxDice: Int = MAX_3D_DICE) {
     val rolling = state.pending != null
     val progress = remember(state.rollCount, rolling) { Animatable(if (rolling) 0f else 1f) }
     if (rolling) {
@@ -164,7 +185,7 @@ private fun SolidDice(state: DiceUiState, record: RollRecord, direction: Offset)
         }
     }
     val slots = record.slots()
-    val shown = slots.take(MAX_3D_DICE)
+    val shown = slots.take(maxDice)
     val diceDefaults = themeDiceColors()
     val skin = state.skin
     val resources = LocalContext.current.resources
@@ -209,9 +230,41 @@ private fun SolidDice(state: DiceUiState, record: RollRecord, direction: Offset)
     }
 }
 
+/**
+ * A rolled pool of up to [MAX_3D_DICE] dice, at rest in 3D. With a group selected the dice are sorted for it,
+ * the group's dice sit on a tint and the others are dimmed.
+ */
+@Composable
+private fun PoolSolidDice(state: DiceUiState, pool: DicePool) {
+    val criterion = state.selectedCriterion
+    val dice = criterion?.let { pool.ordered(it) } ?: pool.dice
+    val diceDefaults = themeDiceColors()
+    val skin = state.skin
+    val resources = LocalResources.current
+    val description = dice.joinToString(", ") { resources.getString(R.string.dice_result_kept, pool.sides, it.value) }
+    Dice3DCanvas(
+        slots = dice.map { Die3D.of(pool.sides, it.value, kept = criterion == null || criterion.matches(it.value)) },
+        progress = 1f,
+        directionX = 1f,
+        directionY = 0f,
+        durationMs = 0,
+        skin = skin,
+        colorsFor = { sides ->
+            val die = skin.forSides(sides)
+            DieColors(fill = die.fill ?: diceDefaults.fill, edge = die.edge ?: diceDefaults.edge, text = die.text ?: diceDefaults.text)
+        },
+        description = description,
+        modifier = Modifier.fillMaxSize().testTag(POOL_SOLID_TAG),
+        highlighted = criterion?.let { c -> dice.indices.filter { c.matches(dice[it].value) }.toSet() }.orEmpty(),
+        highlightColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+    )
+}
+
+const val POOL_SOLID_TAG = "dice_pool_solid"
+
 /** Quick-roll mode: flat 2D silhouettes ("?" while rolling, values once shown). */
 @Composable
-private fun FlatDice(record: RollRecord, rolling: Boolean, animated: Boolean, key: Int) {
+private fun FlatDice(record: RollRecord, rolling: Boolean, animated: Boolean, key: Int, minChip: Dp = 44.dp) {
     val dice = record.outcome.groups.flatMap { group ->
         group.dice.map { Die3D(group.term.sides, it.value, it.kept) }
     }
@@ -220,7 +273,7 @@ private fun FlatDice(record: RollRecord, rolling: Boolean, animated: Boolean, ke
         val cols = ceil(sqrt(dice.size * (maxWidth / maxHeight))).toInt().coerceIn(1, dice.size.coerceAtLeast(1))
         val rows = ceil(dice.size / cols.toFloat()).toInt().coerceAtLeast(1)
         val cell = minOf(maxWidth / cols, maxHeight / rows)
-        val chip = (cell * 0.72f).coerceIn(44.dp, 112.dp)
+        val chip = (cell * 0.72f).coerceIn(minChip, 112.dp)
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(chip * 0.2f, Alignment.CenterHorizontally),
             verticalArrangement = Arrangement.spacedBy(chip * 0.2f, Alignment.CenterVertically),
@@ -263,6 +316,10 @@ private fun RollRecord.slots(): List<List<Die3D>> = outcome.groups.flatMap { gro
 /** Compact "notation = total" line shown under the tray. */
 @Composable
 fun RollSumBar(state: DiceUiState, modifier: Modifier = Modifier) {
+    if (state.poolMode) {
+        PoolBar(state, modifier)
+        return
+    }
     val record = state.pending ?: state.latest ?: return
     val rolling = state.pending != null
     val total = record.outcome.total
@@ -294,6 +351,25 @@ fun RollSumBar(state: DiceUiState, modifier: Modifier = Modifier) {
         }
     }
 }
+
+/** Pool mode: "10d6", or "10d6 · 4+ → 3 successes" with a group selected. */
+@Composable
+private fun PoolBar(state: DiceUiState, modifier: Modifier) {
+    val pool = state.pool ?: return
+    val text = if (state.pending != null) stringResource(R.string.dice_rolling) else poolSummary(pool, state.selectedCriterion)
+    Surface(modifier = modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.secondaryContainer) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp).testTag(POOL_BAR_TAG),
+        )
+    }
+}
+
+const val POOL_BAR_TAG = "dice_pool_bar"
 
 @Composable
 private fun SwipeHint(animated: Boolean) {

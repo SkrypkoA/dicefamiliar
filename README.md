@@ -22,6 +22,7 @@
 
 - [Features](#features)
   - [Dice roller](#dice-roller)
+    - [Dice pool](#dice-pool)
   - [Random number generator](#random-number-generator)
   - [Pool picker](#pool-picker)
   - [Card drawer](#card-drawer)
@@ -73,6 +74,26 @@
   - **Share** (under the dice panel) copies the roll, or shares it as text (`2d6+1d4+3 = 13 · [3 5] [2]`) or as an image of the dice, in your dice skin, with the total.
 - **Sound, haptics and animations**, each of which can be switched off.
 - **Dice skins (dice sets):** upload a ZIP pack, or build your own set by uploading an image for each die. See [Custom dice skins](#custom-dice-skins).
+
+#### Dice pool
+Switch the dice panel from **Sum** to **Pool** to roll many dice of one type and count **successes**, as in wargames.
+
+- **Dice:**
+  - Pick one die type (d4–d20 or dN) and set **How many** (1–100).
+  - The formula, ±1 and advantage are hidden in this mode.
+- **Groups:**
+  - Tap **+** under the tray and choose a target with **≥ (+)**, **≤ (−)** or **=**, for example `5+` or `=1`.
+  - Each chip shows how many dice it holds.
+  - Tap a chip to select it: the dice are sorted, the group is highlighted, and the bar counts its successes.
+  - Long-press a chip to delete it (after a confirmation).
+  - With a group selected, a swipe (or Roll) rolls only that group's dice; the others keep their values.
+- **Reroll** rolls only the selected group again. **Roll group** starts a new pool with that many dice.
+- **Example (to hit, then to wound):**
+  1. Roll 10d6: `1 1 3 4 5 5 6 6 3 4`.
+  2. Select `=1` and Reroll: the 1s become `1 5`.
+  3. Select `5+` (5 dice) and **Roll group**: `1 4 3 5 6`.
+  4. Select `4+`: **3 successes**.
+- **Big pools:** up to 12 dice stay 3D. Bigger pools (and Quick roll) use flat dice that get smaller, so up to 100 fit in the tray. Your groups are remembered.
 
 ### Random number generator
 - **Range and count:** type Min and Max, tap their ▲▼ arrows, or swipe up or down on a field to step it. Both ends are included, and negative numbers are allowed. Then choose how many numbers you want (1–1000). The first time, the range is **1–100**.

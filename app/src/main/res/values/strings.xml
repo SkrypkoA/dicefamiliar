@@ -524,4 +524,41 @@
     <string name="pool_panel_hide">Hide options</string>
     <string name="pool_panel_show">Show options</string>
     <string name="pool_help_button">How to pick from a pool</string>
+
+    <!-- Dice pool -->
+    <string name="dice_mode_sum">Sum</string>
+    <string name="dice_mode_pool">Pool</string>
+    <string name="dice_pool_count">How many</string>
+    <string name="dice_pool_pick_type">Tap a die type above</string>
+    <string name="dice_pool_add_group">Add group</string>
+    <string name="dice_pool_delete_title">Delete group?</string>
+    <string name="dice_pool_delete_text">The group %1$s will be deleted.</string>
+    <string name="dice_pool_delete_group_action">Delete group %1$s</string>
+    <string name="dice_pool_delete_group">Delete</string>
+    <string name="dice_pool_save_group">Save</string>
+    <string name="dice_pool_target">Target</string>
+    <string name="dice_pool_target_range">1 to %1$d</string>
+    <string name="dice_pool_at_least">≥ (+)</string>
+    <string name="dice_pool_at_most">≤ (−)</string>
+    <string name="dice_pool_equal">=</string>
+    <string name="dice_pool_preview">Group: %1$s</string>
+    <string name="dice_pool_reroll">Reroll (%1$d)</string>
+    <string name="dice_pool_roll_group">Roll group (%1$d)</string>
+    <plurals name="dice_pool_successes">
+        <item quantity="one">%1$d success</item>
+        <item quantity="other">%1$d successes</item>
+    </plurals>
+    <plurals name="dice_pool_group_description">
+        <item quantity="one">Group %1$s, %2$d die</item>
+        <item quantity="other">Group %1$s, %2$d dice</item>
+    </plurals>
+    <string name="dice_pool_history_roll">Pool %1$s</string>
+    <string name="dice_pool_history_reroll">Reroll %1$s (%2$s)</string>
+    <string name="dice_pool_history_roll_group">Roll %1$s (%2$s)</string>
+    <string name="help_dice_pool_title">Dice pool</string>
+    <string name="help_dice_pool_text">Switch the panel to Pool to roll many dice of one type and count successes instead of a sum. Pick a die (d4 to d20 or dN), then set How many. Tapping another die type switches the pool to it.</string>
+    <string name="help_dice_groups_title">Groups</string>
+    <string name="help_dice_groups_text">Under the tray, tap + to add a group: a target and ≥ (+), ≤ (−) or =, for example 5+ or =1. Each chip shows how many dice it holds. Tap a chip to select it (one at a time): the dice are sorted and the group is highlighted, and the bar counts its successes. Long-press a chip to delete it (you\'ll be asked to confirm). With a group selected, a swipe (or Roll) rolls only that group\'s dice.</string>
+    <string name="help_dice_reroll_title">Reroll or roll a group</string>
+    <string name="help_dice_reroll_text">Reroll rolls only the selected group\'s dice again and keeps the rest. Roll group starts a new pool with that many dice. Example: roll 10d6 to hit, select =1 and Reroll; select 5+ and Roll group to wound; then select 4+ to count the wounds.</string>
 </resources>

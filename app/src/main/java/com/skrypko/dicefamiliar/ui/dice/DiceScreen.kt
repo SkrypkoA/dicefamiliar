@@ -54,6 +54,7 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import com.skrypko.dicefamiliar.R
+import com.skrypko.dicefamiliar.domain.dice.pool.SuccessCriterion
 import com.skrypko.dicefamiliar.domain.dice.NotationError
 import com.skrypko.dicefamiliar.domain.dice.RollMode
 import com.skrypko.dicefamiliar.ui.dice.skin.LocalDiceSkin
@@ -131,6 +132,16 @@ fun DiceScreen(viewModel: DiceViewModel = hiltViewModel()) {
         onShareImage = { image ->
             scope.launch { shareImage(context, image, "roll.png", resources.getString(R.string.dice_share)) }
         },
+        pool = DicePoolActions(
+            onModeChange = viewModel::setPoolMode,
+            onCountChange = viewModel::onPoolCountChange,
+            onCountStep = viewModel::onPoolCountStep,
+            onToggleGroup = viewModel::toggleGroup,
+            onAddGroup = viewModel::addGroup,
+            onRemoveGroup = viewModel::removeGroup,
+            onReroll = viewModel::rerollGroup,
+            onRollGroup = viewModel::rollGroup,
+        ),
         onCopy = { text ->
             scope.launch {
                 if (copyText(clipboard, resources.getString(R.string.dice_share), text)) snackbar.showSnackbar(resources.getString(R.string.copied))
@@ -145,6 +156,18 @@ fun DiceScreen(viewModel: DiceViewModel = hiltViewModel()) {
  * Dice screen layout: a collapsible panel (palette, formula, controls, modes) on top, then the
  * dice tray taking all remaining height, then the sum bar (and the Roll button in Quick roll).
  */
+/** Dice pool mode callbacks of [DiceContent]; defaults do nothing (handy in tests and previews). */
+data class DicePoolActions(
+    val onModeChange: (Boolean) -> Unit = {},
+    val onCountChange: (String) -> Unit = {},
+    val onCountStep: (Int) -> Unit = {},
+    val onToggleGroup: (Int) -> Unit = {},
+    val onAddGroup: (SuccessCriterion) -> Unit = {},
+    val onRemoveGroup: (Int) -> Unit = {},
+    val onReroll: () -> Unit = {},
+    val onRollGroup: () -> Unit = {},
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DiceContent(
@@ -163,6 +186,7 @@ fun DiceContent(
     onShare: (String) -> Unit = {},
     onShareImage: (ImageBitmap) -> Unit = {},
     onCopy: (String) -> Unit = {},
+    pool: DicePoolActions = DicePoolActions(),
 ) {
     var capturing by remember { mutableStateOf(false) }
     val quickRoll = state.settings.quickRoll
@@ -172,12 +196,14 @@ fun DiceContent(
     CompositionLocalProvider(LocalDiceSkin provides state.skin) {
         // "Share as image": the latest roll is rendered off screen, captured once, then shared.
         val shared = state.latest
-        if (capturing && shared != null) {
+        val sharedPool = state.pool?.takeIf { state.poolMode }
+        if (capturing && (shared != null || sharedPool != null)) {
             CaptureAsImage(onCaptured = { image ->
                 capturing = false
                 onShareImage(image)
-            }) { RollSnapshot(shared) }
+            }) { if (sharedPool != null) PoolSnapshot(sharedPool, state.selectedCriterion) else RollSnapshot(shared!!) }
         }
+        val shareText = if (sharedPool != null) poolShareText(sharedPool, state.selectedCriterion) else state.latest?.shareText()
         Column(
             modifier = modifier
                 .fillMaxSize()
@@ -197,6 +223,9 @@ fun DiceContent(
                     onToggleFormula = onToggleFormula,
                     shake = fieldShake,
                     modifier = Modifier.heightIn(max = maxPanelHeight),
+                    onPoolModeChange = pool.onModeChange,
+                    onPoolCountChange = pool.onCountChange,
+                    onPoolCountStep = pool.onCountStep,
                 )
             }
             FeaturePanel(visible = state.panelVisible, animate = state.settings.animationsEnabled) { panel() }
@@ -209,10 +238,10 @@ fun DiceContent(
                 onHelp = { showHelp = true },
                 share = FeatureShare(
                     description = stringResource(R.string.dice_share),
-                    onCopy = { state.latest?.let { onCopy(it.shareText()) } },
-                    onShareText = { state.latest?.let { onShare(it.shareText()) } },
+                    onCopy = { shareText?.let(onCopy) },
+                    onShareText = { shareText?.let(onShare) },
                     onShareImage = { capturing = true },
-                    enabled = state.latest != null && state.pending == null,
+                    enabled = shareText != null && state.pending == null,
                 ),
                 history = FeatureHistory(stringResource(R.string.dice_history), if (state.recent.size > 1) ({ showHistory = true }) else null),
             )
@@ -222,6 +251,16 @@ fun DiceContent(
                 onSwipeRoll = onRoll,
                 modifier = Modifier.weight(1f),
             )
+            if (state.poolMode) {
+                PoolGroupBar(
+                    state = state,
+                    onToggle = pool.onToggleGroup,
+                    onAdd = pool.onAddGroup,
+                    onRemove = pool.onRemoveGroup,
+                    onReroll = pool.onReroll,
+                    onRollGroup = pool.onRollGroup,
+                )
+            }
             RollSumBar(state = state)
             if (quickRoll) {
                 Button(
@@ -287,10 +326,15 @@ internal fun RecentRolls(records: List<RollRecord>) {
                 Modifier.fillMaxWidth().padding(vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                val info = record.pool
                 Column(Modifier.weight(1f)) {
-                    Text(record.notation, style = MaterialTheme.typography.bodyLarge, fontFamily = FontFamily.Monospace)
                     Text(
-                        record.outcome.groups.joinToString("  ") { group ->
+                        if (info != null) poolRecordTitle(info, record.notation) else record.notation,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontFamily = FontFamily.Monospace,
+                    )
+                    Text(
+                        info?.pool?.dice?.joinToString(" ") { it.value.toString() } ?: record.outcome.groups.joinToString("  ") { group ->
                             group.dice.joinToString(" ", "[", "]") { if (it.kept) "${it.value}" else "(${it.value})" }
                         },
                         style = MaterialTheme.typography.bodySmall,
@@ -299,13 +343,21 @@ internal fun RecentRolls(records: List<RollRecord>) {
                     )
                 }
                 Text(
-                    record.outcome.total.toString(),
+                    if (info != null) info.selected?.let { "${it.label} → ${info.pool.successes(it)}" }.orEmpty() else record.outcome.total.toString(),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
     }
+}
+
+/** "Pool 10d6", "Reroll =1 (2d6)" or "Roll 5+ (5d6)". */
+@Composable
+private fun poolRecordTitle(info: PoolRollInfo, notation: String): String = when (info.kind) {
+    PoolRollKind.ROLL -> stringResource(R.string.dice_pool_history_roll, notation)
+    PoolRollKind.REROLL -> stringResource(R.string.dice_pool_history_reroll, info.criterion?.label.orEmpty(), notation)
+    PoolRollKind.ROLL_GROUP -> stringResource(R.string.dice_pool_history_roll_group, info.criterion?.label.orEmpty(), notation)
 }
 
 internal fun NotationError.messageRes(): Int = when (this) {
@@ -350,4 +402,7 @@ internal val DICE_HELP = listOf(
     HelpTopic(R.string.help_dice_roll_title, R.string.help_dice_roll_text),
     HelpTopic(R.string.help_dice_results_title, R.string.help_dice_results_text),
     HelpTopic(R.string.help_dice_panel_title, R.string.help_dice_panel_text),
+    HelpTopic(R.string.help_dice_pool_title, R.string.help_dice_pool_text),
+    HelpTopic(R.string.help_dice_groups_title, R.string.help_dice_groups_text),
+    HelpTopic(R.string.help_dice_reroll_title, R.string.help_dice_reroll_text),
 )

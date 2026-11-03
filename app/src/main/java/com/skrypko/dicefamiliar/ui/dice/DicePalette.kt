@@ -63,6 +63,7 @@ fun DicePalette(
     onAdd: (Int) -> Unit,
     onRemove: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    dice: List<Int> = DiceLimits.STANDARD_DICE,
 ) {
     var showCustom by rememberSaveable { mutableStateOf(false) }
     FlowRow(
@@ -70,7 +71,7 @@ fun DicePalette(
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        DiceLimits.STANDARD_DICE.forEach { sides ->
+        dice.forEach { sides ->
             PaletteDie(
                 sides = sides,
                 label = stringResource(R.string.dice_name, sides),

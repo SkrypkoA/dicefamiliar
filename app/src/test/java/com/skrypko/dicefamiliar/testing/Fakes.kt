@@ -84,6 +84,11 @@ class FakeDiceStateRepository(var state: DiceState = DiceState()) : DiceStateRep
     override suspend fun saveMode(mode: RollMode) { state = state.copy(lastMode = mode) }
     override suspend fun saveFormulaVisible(visible: Boolean) { state = state.copy(formulaVisible = visible) }
     override suspend fun savePanelVisible(visible: Boolean) { state = state.copy(panelVisible = visible) }
+    override suspend fun savePoolMode(enabled: Boolean) { state = state.copy(poolMode = enabled) }
+    override suspend fun savePoolNotation(notation: String) { state = state.copy(poolNotation = notation) }
+    override suspend fun savePoolGroups(groups: List<com.skrypko.dicefamiliar.domain.dice.pool.SuccessCriterion>) {
+        state = state.copy(poolGroups = groups)
+    }
 }
 
 class FakeNumberStateRepository(var state: NumberState = NumberState()) : NumberStateRepository {

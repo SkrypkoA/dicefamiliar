@@ -67,6 +67,9 @@ fun Dice3DCanvas(
     colorsFor: DieColorsFor,
     description: String,
     modifier: Modifier = Modifier,
+    /** Slots drawn on a shared tint (a dice pool's selected group). */
+    highlighted: Set<Int> = emptySet(),
+    highlightColor: Color = Color.Transparent,
 ) {
     val paints = remember { DicePaints() }
     Canvas(modifier.semantics { contentDescription = description }) {
@@ -75,6 +78,15 @@ fun Dice3DCanvas(
         slots.forEachIndexed { index, group ->
             val (cx, cy) = layout.slots[index]
             val s = layout.dieSize
+            if (index in highlighted) {
+                val half = s * 0.62f
+                drawRoundRect(
+                    color = highlightColor,
+                    topLeft = androidx.compose.ui.geometry.Offset(cx - half, cy - half),
+                    size = androidx.compose.ui.geometry.Size(half * 2, half * 2),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(half * 0.45f),
+                )
+            }
             fun draw(die: Die3D, x: Float, y: Float, dieSize: Float) = drawDie(
                 die = die,
                 index = index, // dice of one slot tumble together
