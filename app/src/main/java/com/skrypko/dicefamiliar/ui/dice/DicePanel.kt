@@ -36,6 +36,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.skrypko.dicefamiliar.R
+import com.skrypko.dicefamiliar.ui.common.StepperNumberField
+import com.skrypko.dicefamiliar.ui.common.StepperArrows
+import com.skrypko.dicefamiliar.domain.dice.pool.PoolNotation
+import com.skrypko.dicefamiliar.domain.dice.DiceLimits
+import androidx.compose.ui.platform.testTag
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SegmentedButton
 import com.skrypko.dicefamiliar.domain.dice.RollMode
 
 /** Collapsible panel: dice palette, optional formula field, modifier controls and roll modes. */
@@ -52,6 +60,9 @@ fun DicePanel(
     onToggleFormula: () -> Unit,
     shake: Float,
     modifier: Modifier = Modifier,
+    onPoolModeChange: (Boolean) -> Unit = {},
+    onPoolCountChange: (String) -> Unit = {},
+    onPoolCountStep: (Int) -> Unit = {},
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -64,12 +75,18 @@ fun DicePanel(
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            PoolModeSwitch(state.poolMode, onPoolModeChange)
             DicePalette(
                 counts = state.paletteCounts,
                 customSides = state.customSides,
                 onAdd = onDieTapped,
                 onRemove = onDieLongPressed,
+                dice = if (state.poolMode) PoolNotation.POOL_DICE else DiceLimits.STANDARD_DICE,
             )
+            if (state.poolMode) {
+                PoolControls(state, onPoolCountChange, onPoolCountStep, onClear, shake)
+                return@Column
+            }
             // With the ƒx toggle off the formula is not composed at all (nothing faded or disabled).
             if (state.formulaVisible) {
                 OutlinedTextField(
@@ -146,6 +163,68 @@ fun DicePanel(
         }
     }
 }
+
+/** Sum (add up a formula) or Pool (one die type, count successes). */
+@Composable
+private fun PoolModeSwitch(poolMode: Boolean, onChange: (Boolean) -> Unit) {
+    val options = listOf(false to R.string.dice_mode_sum, true to R.string.dice_mode_pool)
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().testTag(POOL_MODE_SWITCH_TAG)) {
+        options.forEachIndexed { index, (value, label) ->
+            SegmentedButton(
+                selected = poolMode == value,
+                onClick = { onChange(value) },
+                shape = SegmentedButtonDefaults.itemShape(index, options.size),
+                label = { Text(stringResource(label), maxLines = 1) },
+            )
+        }
+    }
+}
+
+/** Pool mode: how many dice (type, arrows or swipe) and Clear; no formula, modifiers or roll modes. */
+@Composable
+private fun PoolControls(
+    state: DiceUiState,
+    onCountChange: (String) -> Unit,
+    onCountStep: (Int) -> Unit,
+    onClear: () -> Unit,
+    shake: Float,
+) {
+    val count = PoolNotation.parse(state.notation)?.first
+    val name = stringResource(R.string.dice_pool_count)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxWidth().offset { IntOffset(shake.dp.roundToPx(), 0) },
+    ) {
+        StepperNumberField(
+            value = state.poolCountText,
+            onValueChange = onCountChange,
+            onStep = onCountStep,
+            increaseDescription = stringResource(R.string.stepper_increase, name),
+            decreaseDescription = stringResource(R.string.stepper_decrease, name),
+            arrows = StepperArrows.AFTER,
+            label = name,
+            supportingText = if (count == null) ({ Text(stringResource(R.string.dice_pool_pick_type)) }) else null,
+            keyboardType = KeyboardType.NumberPassword,
+            textStyle = MaterialTheme.typography.titleLarge,
+            canIncrease = count != null && count < DiceLimits.MAX_COUNT,
+            canDecrease = count != null && count > DiceLimits.MIN_COUNT,
+            modifier = Modifier.weight(1f),
+            fieldModifier = Modifier.testTag(POOL_COUNT_FIELD_TAG),
+        )
+        FilledTonalButton(
+            onClick = onClear,
+            enabled = state.notation.isNotEmpty(),
+            modifier = Modifier.height(CONTROL_HEIGHT).widthIn(min = CONTROL_MIN_WIDTH),
+            contentPadding = PaddingValues(horizontal = 16.dp),
+        ) {
+            Icon(EraserIcon, contentDescription = stringResource(R.string.dice_clear), modifier = Modifier.size(26.dp))
+        }
+    }
+}
+
+const val POOL_MODE_SWITCH_TAG = "dice_pool_mode_switch"
+const val POOL_COUNT_FIELD_TAG = "dice_pool_count"
 
 /** Large "+1" / "−1" modifier button. */
 @Composable

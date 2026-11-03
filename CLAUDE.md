@@ -234,6 +234,32 @@ The display mode is worked out from the whole pool, not item by item. It applies
 - **d10** faces read `0`–`9`: a roll of 10 shows `0` but counts as 10. Custom **dN** dice are spheres in 3D.
 - **Animation:** with Quick roll on, the 2D dice spin with "?" faces (no randomness in the UI), then the result chips appear. With animations off, the result is shown instantly. Sound and haptics follow the app settings.
 - **LAN-ready:** rolls go through `DiceRollAction` (`dice.roll`, v1) and `DiceRollHandler` via the shared remote-action layer. The notation string is the wire format; the rolling device re-parses it as untrusted input and owns the randomness.
+- **Dice pool mode** (a Sum / Pool switch at the top of the dice panel, persisted as `dice.pool_mode`), for wargames: roll many dice of one type and count successes instead of summing.
+  - **Domain (`domain/dice/pool/`, unit-tested):**
+    - `SuccessCriterion(target, Comparison.AT_LEAST | AT_MOST | EQUAL)`, with the labels `5+`, `2−` and `=1`.
+    - `DicePool(sides, dice: PoolDie(id, value))` provides `matching`, `successes`, `ordered` and `withValues`. `ordered` sorts descending for `N+` and `=N` and ascending for `N−`, so the group comes first and contiguous. `withValues` rerolls in place, keeping ids and positions.
+    - `PoolGroups` holds the user's groups, at most one selected. They are live filters that re-match after every roll.
+    - `PoolNotation`: pool formulas are always `NdS`. Tapping another die type switches to `1dS`. The "How many" field sets 1–100 dice.
+  - **Panel in pool mode:**
+    - The palette shows only d4–d20 and dN (no d100).
+    - A "How many" `StepperNumberField` and Clear.
+    - No ƒx, formula field, ±1 or roll modes.
+    - The pool formula is kept apart from the sum formula (`dice.pool_notation`).
+  - **Tray:**
+    - The roll tumbles in 3D (up to 30 dice, smaller) or spins in 2D (Quick roll, or over 30).
+    - Then it rests in 3D (`PoolSolidDice`: up to 12 dice with Quick roll off), or in `PoolGrid`, a flat grid for Quick roll or more than 12 dice, whose dice shrink to 28 dp.
+    - With a group selected, the dice are sorted and the group's dice sit on a `primary` tint (`Dice3DCanvas.highlighted` in 3D) while the others are dimmed. In the grid the dice slide to their new places (`animateItem`).
+  - **Group bar (`PoolGroupBar`) under the tray:**
+    - One chip per group (`5+ · 5`: the test and how many dice pass it). Tap to select or unselect; long-press to delete, after a confirmation dialog.
+    - The add-item button opens the criterion editor: a target stepper (1..sides) and ≥ / ≤ / =.
+    - The groups are persisted as `dice.pool_groups`.
+  - **With a group selected:**
+    - **Reroll (k)** rolls `kdS` and writes the values back to those dice. A swipe (or Roll) does the same: with a group selected it rolls only that group, never the whole pool.
+    - **Roll group (k)** starts a new pool of k dice.
+    - Both go through `DiceRollAction`.
+  - **Result bar:** `10d6 · 4+ → 3 successes`.
+  - **History:** records carry `PoolRollInfo` (kind, group, resulting pool).
+  - **Share:** `poolShareText` and `PoolSnapshot`.
 
 ### Card Drawer
 - **Model (`domain/cards/`):**
