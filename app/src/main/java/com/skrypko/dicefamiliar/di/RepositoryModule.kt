@@ -1,6 +1,6 @@
 package com.skrypko.dicefamiliar.di
 
-import com.skrypko.dicefamiliar.data.dice.AssetDiceSetRepository
+import com.skrypko.dicefamiliar.data.dice.DefaultDiceSetRepository
 import com.skrypko.dicefamiliar.data.dice.DataStoreDiceStateRepository
 import com.skrypko.dicefamiliar.data.dice.DiceSetRepository
 import com.skrypko.dicefamiliar.data.dice.DiceStateRepository
@@ -30,7 +30,7 @@ abstract class RepositoryModule {
     abstract fun bindParticipant(impl: DataStoreParticipantRepository): ParticipantRepository
 
     @Binds
-    abstract fun bindDiceSets(impl: AssetDiceSetRepository): DiceSetRepository
+    abstract fun bindDiceSets(impl: DefaultDiceSetRepository): DiceSetRepository
 
     @Binds
     abstract fun bindLastTab(impl: DataStoreLastTabRepository): LastTabRepository

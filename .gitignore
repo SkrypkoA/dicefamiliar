@@ -16,3 +16,6 @@ local.properties
 
 .kotlin
 /.idea
+
+# Python bytecode from tools/
+__pycache__/

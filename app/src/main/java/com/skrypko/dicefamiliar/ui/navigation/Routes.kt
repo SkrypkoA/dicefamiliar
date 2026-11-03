@@ -16,3 +16,7 @@ data object CardsRoute
 
 @Serializable
 data object SettingsRoute
+
+/** Editor of a user dice set; opened from Settings and shown under the Settings tab. */
+@Serializable
+data class DiceSetEditRoute(val setId: String)

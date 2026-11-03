@@ -2,6 +2,8 @@
 
 Usage: python3 tools/gen_dice_templates.py docs/dice-templates
 
+The shape tables (SHAPES_2D, FACES_3D) are also imported by tools/gen_dice_examples.py.
+
 Geometry mirrors the app:
 - 2D silhouettes: ui/dice/DiceShapes.kt (fractions of a square canvas) and label offsets in DiceIcon.kt.
 - 3D face templates: ui/dice/render3d/DieModel.kt + FaceTemplate in Dice3DCanvas.kt. A face texture
@@ -13,7 +15,7 @@ import os
 import sys
 
 SIZE = 512
-OUT = sys.argv[1] if len(sys.argv) > 1 else "docs/dice-templates"
+OUT = "docs/dice-templates"
 
 
 def svg(name, body, title):
@@ -67,24 +69,30 @@ SHAPES_2D = {
     "dN": ("circle", (0.5, 0.5)),
 }
 
-for key, (shape, (lx, ly)) in SHAPES_2D.items():
-    if shape is None:
-        r = 0.14 * SIZE
-        body = f'<rect x="0" y="0" width="{SIZE}" height="{SIZE}" rx="{r}" fill="#e3ecfb" stroke="#2f5b9a" stroke-width="3"/>\n'
-    elif shape == "circle":
-        body = f'<circle cx="{SIZE / 2}" cy="{SIZE / 2}" r="{SIZE / 2 - 2}" fill="#e3ecfb" stroke="#2f5b9a" stroke-width="3"/>\n'
-    else:
-        body = poly([(x * SIZE, y * SIZE) for x, y in shape], **OUTLINE)
-    body += label_box(lx, ly, 0.5, 0.26, "label safe area (app draws text)")
-    svg(f"2d/{key}.svg", body, f"{key} 2D silhouette template")
+# d100 = two d10 kites scaled to 46% at x = 12% and 42%, top at 10%; caption centred at 78%.
+D100_KITE_OFFSETS = (0.12, 0.42)
+D100_KITE_SCALE = 0.46
+D100_KITE_TOP = 0.1
 
-# d100: two smaller overlapping d10 kites on one pill, caption below (DiceIcon.kt PercentilePair).
-kite = SHAPES_2D["d10"][0]
-body = '<rect x="20" y="40" width="472" height="270" rx="135" fill="#eef1f6"/>\n'
-for ox in (0.12, 0.42):
-    body += poly([((ox + x * 0.46) * SIZE, (0.1 + y * 0.46) * SIZE) for x, y in kite], **OUTLINE)
-body += label_box(0.5, 0.78, 0.5, 0.14, "caption safe area")
-svg("2d/d100.svg", body, "d100 2D template (two d10 kites)")
+def write_2d():
+    for key, (shape, (lx, ly)) in SHAPES_2D.items():
+        if shape is None:
+            r = 0.14 * SIZE
+            body = f'<rect x="0" y="0" width="{SIZE}" height="{SIZE}" rx="{r}" fill="#e3ecfb" stroke="#2f5b9a" stroke-width="3"/>\n'
+        elif shape == "circle":
+            body = f'<circle cx="{SIZE / 2}" cy="{SIZE / 2}" r="{SIZE / 2 - 2}" fill="#e3ecfb" stroke="#2f5b9a" stroke-width="3"/>\n'
+        else:
+            body = poly([(x * SIZE, y * SIZE) for x, y in shape], **OUTLINE)
+        body += label_box(lx, ly, 0.5, 0.26, "label safe area (app draws text)")
+        svg(f"2d/{key}.svg", body, f"{key} 2D silhouette template")
+
+    # d100: two smaller overlapping d10 kites on one pill, caption below (DiceIcon.kt PercentilePair).
+    kite = SHAPES_2D["d10"][0]
+    body = '<rect x="20" y="40" width="472" height="270" rx="135" fill="#eef1f6"/>\n'
+    for ox in D100_KITE_OFFSETS:
+        body += poly([((ox + x * D100_KITE_SCALE) * SIZE, (D100_KITE_TOP + y * D100_KITE_SCALE) * SIZE) for x, y in kite], **OUTLINE)
+    body += label_box(0.5, 0.78, 0.5, 0.14, "caption safe area")
+    svg("2d/d100.svg", body, "d100 2D template (two d10 kites)")
 
 
 # ---------- 3D face templates (DieModel.kt) ----------
@@ -154,18 +162,29 @@ def inradius(pts):
     return best
 
 
-for key, pts in FACES_3D.items():
-    r = max(math.hypot(x, y) for x, y in pts)
-    scale = (SIZE / 2) / r
-    screen = [(SIZE / 2 + x * scale, SIZE / 2 + y * scale) for x, y in pts]
-    ir = inradius(pts) * scale
-    body = poly(screen, **OUTLINE)
-    body += f'<circle cx="{SIZE / 2}" cy="{SIZE / 2}" r="{ir * 0.8:.1f}" fill="none" stroke="#e53935" stroke-width="2" stroke-dasharray="8 6"/>\n'
-    body += f'<path d="M{SIZE / 2 - 10} {SIZE / 2}H{SIZE / 2 + 10}M{SIZE / 2} {SIZE / 2 - 10}V{SIZE / 2 + 10}" stroke="#e53935" stroke-width="2"/>\n'
-    body += f'<path d="M{SIZE / 2} 30 l-12 18 h24 z" fill="#2f5b9a"/>\n'
-    body += f'<text x="{SIZE / 2}" y="{SIZE - 14}" font-family="sans-serif" font-size="18" fill="#e53935" text-anchor="middle">{key} face · number safe circle · arrow = up</text>\n'
-    svg(f"3d/{key}_face.svg", body, f"{key} 3D face texture template")
-    if key == "d10":
-        svg("3d/d100_face.svg", body.replace("d10 face", "d100 (tens) face"), "d100 tens die face template")
+def write_3d():
+    for key, pts in FACES_3D.items():
+        r = max(math.hypot(x, y) for x, y in pts)
+        scale = (SIZE / 2) / r
+        screen = [(SIZE / 2 + x * scale, SIZE / 2 + y * scale) for x, y in pts]
+        ir = inradius(pts) * scale
+        body = poly(screen, **OUTLINE)
+        body += f'<circle cx="{SIZE / 2}" cy="{SIZE / 2}" r="{ir * 0.8:.1f}" fill="none" stroke="#e53935" stroke-width="2" stroke-dasharray="8 6"/>\n'
+        body += f'<path d="M{SIZE / 2 - 10} {SIZE / 2}H{SIZE / 2 + 10}M{SIZE / 2} {SIZE / 2 - 10}V{SIZE / 2 + 10}" stroke="#e53935" stroke-width="2"/>\n'
+        body += f'<path d="M{SIZE / 2} 30 l-12 18 h24 z" fill="#2f5b9a"/>\n'
+        body += f'<text x="{SIZE / 2}" y="{SIZE - 14}" font-family="sans-serif" font-size="18" fill="#e53935" text-anchor="middle">{key} face · number safe circle · arrow = up</text>\n'
+        svg(f"3d/{key}_face.svg", body, f"{key} 3D face texture template")
+        if key == "d10":
+            svg("3d/d100_face.svg", body.replace("d10 face", "d100 (tens) face"), "d100 tens die face template")
 
-print("Templates written to", OUT)
+
+def main():
+    global OUT
+    OUT = sys.argv[1] if len(sys.argv) > 1 else OUT
+    write_2d()
+    write_3d()
+    print("Templates written to", OUT)
+
+
+if __name__ == "__main__":
+    main()

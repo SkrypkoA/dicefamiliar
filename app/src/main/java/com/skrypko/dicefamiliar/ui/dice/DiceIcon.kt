@@ -86,7 +86,9 @@ fun DiceIcon(
             // Labels sit in each silhouette's safe area (see docs/dice-assets.md).
             modifier = when (sides) {
                 4 -> Modifier.padding(top = size * 0.28f)
-                10, 100 -> Modifier.padding(bottom = size * 0.16f)
+                10 -> Modifier.padding(bottom = size * 0.16f)
+                // Only reached with a set image: the caption goes under the two kites, centred at 78%.
+                100 -> Modifier.padding(top = size * 0.56f)
                 else -> Modifier
             },
             maxLines = 1,

@@ -85,4 +85,72 @@
     <string name="settings_haptics_summary">Vibrate when a result is shown</string>
     <string name="settings_quick_roll">Quick roll</string>
     <string name="settings_quick_roll_summary">Show a Roll button instead of swiping to roll</string>
+
+    <!-- Dice sets (skins) -->
+    <string name="dice_sets_title">Dice sets</string>
+    <string name="dice_sets_help">Dice set requirements</string>
+    <string name="dice_sets_builtin">Built-in</string>
+    <string name="dice_sets_custom">Custom</string>
+    <string name="dice_sets_import">Upload ZIP</string>
+    <string name="dice_sets_importing">Uploading…</string>
+    <string name="dice_sets_new">New set</string>
+    <string name="dice_sets_edit">Edit %1$s</string>
+    <string name="dice_sets_delete">Delete %1$s</string>
+    <string name="dice_sets_delete_title">Delete “%1$s”?</string>
+    <string name="dice_sets_delete_text">Its images are removed from this device. This can’t be undone.</string>
+    <string name="dice_sets_delete_confirm">Delete</string>
+    <string name="dice_sets_new_title">New dice set</string>
+    <string name="dice_sets_name_label">Name</string>
+    <string name="dice_sets_create">Create</string>
+    <string name="dice_sets_default_name">Custom dice</string>
+    <string name="dice_sets_imported">Uploaded “%1$s”</string>
+    <string name="dice_sets_updated">Updated “%1$s”</string>
+    <plurals name="dice_sets_skipped">
+        <item quantity="one">%d file skipped</item>
+        <item quantity="other">%d files skipped</item>
+    </plurals>
+    <plurals name="dice_sets_missing">
+        <item quantity="one">%d referenced file missing</item>
+        <item quantity="other">%d referenced files missing</item>
+    </plurals>
+    <string name="dice_sets_error_not_zip">This file isn’t a ZIP archive</string>
+    <string name="dice_sets_error_unsafe">The archive contains unsafe file paths</string>
+    <string name="dice_sets_error_too_many">The archive has too many files (max 300)</string>
+    <string name="dice_sets_error_too_large">The archive is too large (max 50 MB unpacked)</string>
+    <string name="dice_sets_error_nothing">No dice images, font or manifest.json found</string>
+    <string name="dice_sets_error_manifest">manifest.json is invalid</string>
+    <string name="dice_sets_error_read">Couldn’t read the file</string>
+
+    <!-- Dice set editor -->
+    <string name="dice_set_back">Back</string>
+    <string name="dice_set_name">Set name</string>
+    <string name="dice_set_editor_hint">Tap a die to upload its own images. Dice without images keep the default look.</string>
+    <string name="dice_set_image_2d">2D image</string>
+    <string name="dice_set_image_2d_summary">Palette and Quick roll. PNG or WebP, transparent, 512×512</string>
+    <string name="dice_set_face_3d">3D face texture</string>
+    <string name="dice_set_face_3d_summary">Painted on every face of the 3D die. Square, 512×512</string>
+    <string name="dice_set_upload">Upload</string>
+    <string name="dice_set_replace">Replace</string>
+    <string name="dice_set_remove">Remove</string>
+    <string name="dice_set_not_set">Not set: the default look is used</string>
+    <string name="dice_set_badge_2d">2D</string>
+    <string name="dice_set_badge_3d">3D</string>
+    <string name="dice_set_error_unreadable">Couldn’t read this image</string>
+    <string name="dice_set_error_too_large">The image is larger than 10 MB</string>
+    <string name="dice_set_not_found">This dice set no longer exists</string>
+
+    <!-- Dice set requirements (help sheet) -->
+    <string name="dice_help_intro">A dice set changes how the dice look. Every part is optional: anything missing keeps the default look.</string>
+    <string name="dice_help_ways_title">Two ways to add a set</string>
+    <string name="dice_help_ways_text">• Upload a whole pack as a ZIP (Upload ZIP).\n• Create a set (New set), then pick a die and upload an image for it.</string>
+    <string name="dice_help_2d_title">2D images</string>
+    <string name="dice_help_2d_text">• PNG or WebP with a transparent background, 512×512 px (larger images are scaled down).\n• The die silhouette fills the canvas, centred.\n• Leave the middle empty: the app writes the die name or the rolled number on top.\n• Shown at about 56 dp, so keep details bold.\n• d100 is a pair of d10s; leave space under them for the caption.</string>
+    <string name="dice_help_3d_title">3D face textures</string>
+    <string name="dice_help_3d_text">• Square PNG or WebP, 512×512 px.\n• Painted on every face of that die, under the number. The top of the image is the face’s top.\n• Keep the centre calm so numbers stay readable.\n• Not used for custom dN dice (they are spheres).</string>
+    <string name="dice_help_zip_title">ZIP pack</string>
+    <string name="dice_help_zip_text">Name files after the dice: d4, d6, d8, d10, d12, d20, d100, dN. A manifest.json is optional; add one to set the name and colours. For dark dice, set a light number colour (\"text\"), otherwise numbers follow the theme and may be hard to read.</string>
+    <string name="dice_help_zip_tree" translatable="false">my_dice.zip\n├── manifest.json     (optional)\n├── 2d/\n│   ├── d6.png\n│   └── d20.png\n├── 3d/\n│   └── d6_face.png\n└── fonts/\n    └── numbers.ttf   (optional)</string>
+    <string name="dice_help_manifest_example" translatable="false">{\n  "formatVersion": 1,\n  "id": "wood",\n  "name": "Wood",\n  "style": { "fill": "#8D6E63", "edge": "#3E2723", "text": "#FFF8E1" },\n  "dice": { "d6": { "image2d": "2d/d6.png", "pips": true } }\n}</string>
+    <string name="dice_help_limits_title">Limits</string>
+    <string name="dice_help_limits_text">Images up to 10 MB each, fonts (TTF, OTF) up to 5 MB, the whole ZIP up to 50 MB unpacked and 300 files. Other files are skipped.</string>
 </resources>
