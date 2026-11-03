@@ -1,7 +1,7 @@
 <h1 align="center">Dice Familiar</h1>
 
 <p align="center">
-  An Android app for tabletop players: roll dice in 3D, and later draw cards, pick from lists and generate random numbers.
+  An Android app for tabletop players: roll dice in 3D and generate random numbers, and later draw cards and pick from lists.
 </p>
 
 <p align="center">
@@ -20,6 +20,7 @@
 
 - [Features](#features)
   - [Dice roller](#dice-roller)
+  - [Random number generator](#random-number-generator)
   - [Settings](#settings)
 - [Custom dice skins](#custom-dice-skins)
   - [Option 1: upload a ZIP pack](#option-1-upload-a-zip-pack)
@@ -44,7 +45,7 @@
 |---|---|
 | 🎲 **Dice roller** | ✅ Done |
 | ⚙️ **Settings** | ✅ Done |
-| 🔢 Random number generator | 🚧 Planned |
+| 🔢 **Random number generator** | ✅ Done |
 | 📋 Pool picker (named lists with images, CSV/ZIP import & export) | 🚧 Planned |
 | 🃏 Card drawer (52 cards, jokers, multiple decks) | 🚧 Planned |
 | 📡 LAN play: ask another player's phone to roll | 🚧 Planned (the request/response layer is ready) |
@@ -62,6 +63,19 @@
   - Recent rolls open from the history button.
 - **Sound, haptics and animations**, each of which can be switched off.
 - **Dice skins (dice sets):** upload a ZIP pack, or build your own set by uploading an image for each die. See [Custom dice skins](#custom-dice-skins).
+
+### Random number generator
+- **Range and count:** type Min and Max, tap their ▲▼ arrows, or swipe up or down on a field to step it. Both ends are included, and negative numbers are allowed. Then choose how many numbers you want (1–1000). The first time, the range is **1–100**.
+- **Integer or Decimal:** in decimal mode, choose 1–6 decimal places. `0` to `1` with 2 places gives values like `0.07` or `1.00`.
+- **Allow duplicates:** when it's off, every number is different. If the range has fewer values than you asked for, the Count field says so.
+- **Errors are shown under the field** as you type, for example *Must be at least Min*.
+- **Remembers your choices:** the range, count, mode and options you used last, and your last result, are still there when you reopen the app.
+- **Results:**
+  - One number is shown large.
+  - Several numbers are shown as chips, with their sum.
+  - **Copy** puts them on the clipboard and **Share** sends them to any app, as text such as `7, 42, 13`.
+  - **Recent results** keeps the last 20 in a history sheet, which you can clear.
+- **Sound, haptics and animations** follow the app settings. Every value is equally likely, and the generator uses `SecureRandom`.
 
 ### Settings
 - **Sounds, Animations, Haptic feedback, Quick roll**
@@ -206,11 +220,11 @@ app/src/main/java/com/skrypko/dicefamiliar/
 ├── ui/            Compose screens + ViewModels (dice, settings, navigation, theme, common)
 │   └── dice/
 │       └── render3d/   pseudo-3D dice: convex meshes, shading, numbers on faces
-├── domain/        pure Kotlin: dice (parser, roller, editor), random, remote, settings
+├── domain/        pure Kotlin: dice (parser, roller, editor), number (parser, generator), random, remote, settings
 ├── data/          DataStore repositories, the dice-set loader
 └── di/            Hilt modules
 docs/              designer guide for dice sets, SVG templates, example packs
-tools/             generators: dice-set templates and examples, roll sound
+tools/             generators: dice-set templates and examples, sounds
 ```
 
 ## Dice notation
@@ -240,6 +254,7 @@ Generators for the app's assets. Run them from the repository root with Python 3
 | `tools/gen_dice_examples.py` | example dice skins `docs/dice-examples/wood.zip` and `neon.zip` | Python 3 + [Pillow](https://pypi.org/project/pillow/) |
 | `tools/segment_font.py` | the seven-segment number font used by `neon.zip` (`python3 tools/segment_font.py out.ttf`) | Python 3 |
 | `tools/gen_dice_sound.py` | the roll sound `res/raw/dice_roll.ogg` | Python 3 + ffmpeg |
+| `tools/gen_number_sound.py` | the number generator chime `res/raw/number_tick.ogg` | Python 3 + ffmpeg |
 | `tools/gen_app_icon.py` | the adaptive launcher icon in `res/drawable/` | Python 3 |
 | `tools/render_legacy_icons.sh` | legacy launcher PNGs for API 24–25 in `res/mipmap-*/` | Python 3 + ImageMagick 7 (`magick`) |
 
@@ -265,6 +280,13 @@ The output is reproducible: rerunning without changes gives byte-identical ZIPs,
 ```bash
 python3 tools/gen_dice_sound.py /tmp/dice_roll.wav
 ffmpeg -y -i /tmp/dice_roll.wav -c:a libvorbis -q:a 4 app/src/main/res/raw/dice_roll.ogg
+```
+
+**Number chime** (a short two-note bell, deterministic):
+
+```bash
+python3 tools/gen_number_sound.py /tmp/number_tick.wav
+ffmpeg -y -i /tmp/number_tick.wav -c:a libvorbis -q:a 4 app/src/main/res/raw/number_tick.ogg
 ```
 
 **App icon** (one shape list drives the adaptive, monochrome and legacy icons):

@@ -13,6 +13,7 @@ import javax.inject.Singleton
 /** Short UI sound effects available to every feature. */
 enum class Sound(@param:RawRes val resId: Int) {
     DICE_ROLL(R.raw.dice_roll),
+    NUMBER_GENERATED(R.raw.number_tick),
 }
 
 interface SoundPlayer {

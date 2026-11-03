@@ -12,7 +12,10 @@ import com.skrypko.dicefamiliar.domain.dice.skin.DiceSetImportError
 import com.skrypko.dicefamiliar.domain.dice.skin.DieImageSlot
 import com.skrypko.dicefamiliar.data.dice.DiceState
 import com.skrypko.dicefamiliar.data.dice.DiceStateRepository
+import com.skrypko.dicefamiliar.data.number.NumberState
+import com.skrypko.dicefamiliar.data.number.NumberStateRepository
 import com.skrypko.dicefamiliar.data.remote.ParticipantRepository
+import com.skrypko.dicefamiliar.domain.number.NumberResult
 import com.skrypko.dicefamiliar.data.settings.AppSettingsRepository
 import com.skrypko.dicefamiliar.domain.dice.RollMode
 import com.skrypko.dicefamiliar.domain.random.RandomSource
@@ -67,6 +70,16 @@ class FakeDiceStateRepository(var state: DiceState = DiceState()) : DiceStateRep
     override suspend fun saveMode(mode: RollMode) { state = state.copy(lastMode = mode) }
     override suspend fun saveFormulaVisible(visible: Boolean) { state = state.copy(formulaVisible = visible) }
     override suspend fun savePanelVisible(visible: Boolean) { state = state.copy(panelVisible = visible) }
+}
+
+class FakeNumberStateRepository(var state: NumberState = NumberState()) : NumberStateRepository {
+    var saves = 0
+    override suspend fun load(): NumberState = state
+    override suspend fun save(state: NumberState) {
+        saves++
+        this.state = state.copy(lastResult = this.state.lastResult)
+    }
+    override suspend fun saveLastResult(result: NumberResult?) { state = state.copy(lastResult = result) }
 }
 
 class FakeParticipantRepository(private val self: Participant = Participant("me", "My phone")) :
