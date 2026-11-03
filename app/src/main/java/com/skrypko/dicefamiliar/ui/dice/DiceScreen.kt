@@ -34,6 +34,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -45,9 +46,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
@@ -58,7 +62,9 @@ import com.skrypko.dicefamiliar.R
 import com.skrypko.dicefamiliar.domain.dice.NotationError
 import com.skrypko.dicefamiliar.domain.dice.RollMode
 import com.skrypko.dicefamiliar.ui.dice.skin.LocalDiceSkin
+import com.skrypko.dicefamiliar.ui.common.CaptureAsImage
 import com.skrypko.dicefamiliar.ui.common.HelpButton
+import com.skrypko.dicefamiliar.ui.common.shareImage
 import com.skrypko.dicefamiliar.ui.common.HelpSheet
 import com.skrypko.dicefamiliar.ui.common.HelpTopic
 import com.skrypko.dicefamiliar.ui.theme.DiceFamiliarTheme
@@ -71,6 +77,8 @@ fun DiceScreen(viewModel: DiceViewModel = hiltViewModel()) {
     val haptics = LocalHapticFeedback.current
     val shake = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val resources = LocalResources.current
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
@@ -114,6 +122,13 @@ fun DiceScreen(viewModel: DiceViewModel = hiltViewModel()) {
         onRoll = viewModel::roll,
         onToggleFormula = viewModel::toggleFormula,
         onTogglePanel = viewModel::togglePanel,
+        onShare = { text ->
+            val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
+            context.startActivity(Intent.createChooser(send, resources.getString(R.string.dice_share)))
+        },
+        onShareImage = { image ->
+            scope.launch { shareImage(context, image, "roll.png", resources.getString(R.string.dice_share)) }
+        },
     )
 }
 
@@ -136,11 +151,22 @@ fun DiceContent(
     fieldShake: Float = 0f,
     onToggleFormula: () -> Unit = {},
     onTogglePanel: () -> Unit = {},
+    onShare: (String) -> Unit = {},
+    onShareImage: (ImageBitmap) -> Unit = {},
 ) {
+    var capturing by remember { mutableStateOf(false) }
     val quickRoll = state.settings.quickRoll
     var showHistory by rememberSaveable { mutableStateOf(false) }
     val maxPanelHeight = (LocalConfiguration.current.screenHeightDp * 0.55f).dp
     CompositionLocalProvider(LocalDiceSkin provides state.skin) {
+        // "Share as image": the latest roll is rendered off screen, captured once, then shared.
+        val shared = state.latest
+        if (capturing && shared != null) {
+            CaptureAsImage(onCaptured = { image ->
+                capturing = false
+                onShareImage(image)
+            }) { RollSnapshot(shared) }
+        }
         Column(
             modifier = modifier
                 .fillMaxSize()
@@ -181,6 +207,8 @@ fun DiceContent(
             RollSumBar(
                 state = state,
                 onShowHistory = if (state.recent.size > 1) ({ showHistory = true }) else null,
+                onShareText = { state.latest?.let { onShare(it.shareText()) } },
+                onShareImage = { capturing = true },
             )
             if (quickRoll) {
                 Button(

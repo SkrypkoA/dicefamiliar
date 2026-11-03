@@ -67,6 +67,7 @@
   - The sum appears under the tray, e.g. `2d6+1d4+3 = 13`.
   - Dropped dice are faded.
   - Recent rolls open from the history button.
+  - **Share** the roll as text (`2d6+1d4+3 = 13 · [3 5] [2]`) or as an image of the dice, in your dice skin, with the total.
 - **Sound, haptics and animations**, each of which can be switched off.
 - **Dice skins (dice sets):** upload a ZIP pack, or build your own set by uploading an image for each die. See [Custom dice skins](#custom-dice-skins).
 
@@ -79,7 +80,7 @@
 - **Results:**
   - One number is shown large.
   - Several numbers are shown as chips, with their sum.
-  - **Copy** puts them on the clipboard and **Share** sends them to any app, as text such as `7, 42, 13`.
+  - **Copy** puts them on the clipboard. **Share** sends them to any app, as text (`7, 42, 13`) or as an image of the numbers on the table.
   - **Recent results** keeps the last 20 in a history sheet, which you can clear.
 - **Sound, haptics and animations** follow the app settings. Every value is equally likely, and the generator uses `SecureRandom`.
 

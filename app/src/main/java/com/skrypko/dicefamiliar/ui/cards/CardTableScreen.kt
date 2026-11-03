@@ -40,13 +40,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.RestartAlt
-import androidx.compose.material.icons.automirrored.outlined.TextSnippet
-import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -112,6 +107,7 @@ import com.skrypko.dicefamiliar.ui.common.CaptureAsImage
 import com.skrypko.dicefamiliar.ui.common.HelpButton
 import com.skrypko.dicefamiliar.ui.common.HelpSheet
 import com.skrypko.dicefamiliar.ui.common.HelpTopic
+import com.skrypko.dicefamiliar.ui.common.ShareMenuButton
 import com.skrypko.dicefamiliar.ui.common.shareImage
 import com.skrypko.dicefamiliar.ui.theme.LocalThemeStyle
 import com.skrypko.dicefamiliar.ui.theme.tray.themedTray
@@ -282,7 +278,6 @@ private fun TopBar(
     onReset: () -> Unit,
     actions: CardTableActions,
 ) {
-    var shareMenu by remember { mutableStateOf(false) }
     Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onOpenDecks) {
             Icon(LocalThemeStyle.current.icons.cards, contentDescription = stringResource(R.string.cards_back_to_decks))
@@ -300,29 +295,12 @@ private fun TopBar(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Box {
-            IconButton(onClick = { shareMenu = true }, enabled = state.hand.isNotEmpty()) {
-                Icon(Icons.Outlined.Share, contentDescription = stringResource(R.string.cards_share))
-            }
-            DropdownMenu(expanded = shareMenu, onDismissRequest = { shareMenu = false }) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.cards_share_as_text)) },
-                    leadingIcon = { Icon(Icons.AutoMirrored.Outlined.TextSnippet, contentDescription = null) },
-                    onClick = {
-                        shareMenu = false
-                        onShareText()
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.cards_share_as_image)) },
-                    leadingIcon = { Icon(Icons.Outlined.Image, contentDescription = null) },
-                    onClick = {
-                        shareMenu = false
-                        onShareImage()
-                    },
-                )
-            }
-        }
+        ShareMenuButton(
+            contentDescription = stringResource(R.string.cards_share),
+            onShareText = onShareText,
+            onShareImage = onShareImage,
+            enabled = state.hand.isNotEmpty(),
+        )
         IconToggleButton(checked = state.showButtons, onCheckedChange = { actions.toggleButtons() }) {
             Icon(
                 Icons.Outlined.TouchApp,
