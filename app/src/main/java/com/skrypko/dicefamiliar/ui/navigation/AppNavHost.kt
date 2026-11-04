@@ -1,5 +1,7 @@
 package com.skrypko.dicefamiliar.ui.navigation
 
+import androidx.compose.runtime.LaunchedEffect
+import com.skrypko.dicefamiliar.ui.lan.LanScreen
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -44,6 +46,18 @@ fun AppNavHost(
     // Wait for the saved tab (a few ms) because NavHost's start destination can't change later.
     val startTab by navigationViewModel.startTab.collectAsStateWithLifecycle()
     val start = startTab ?: return
+    val lanEnabled by navigationViewModel.lanEnabled.collectAsStateWithLifecycle()
+    val openRequest by navigationViewModel.openRequest.collectAsStateWithLifecycle()
+    // A roll request (notification or the LAN tab card) opens on the Dice tab.
+    LaunchedEffect(openRequest) {
+        if (openRequest) {
+            navController.navigate(DiceRoute) {
+                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+    }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
     val currentTab = TopLevelDestination.entries.firstOrNull { tab ->
@@ -52,6 +66,7 @@ fun AppNavHost(
         currentDestination?.hasRoute(DiceSetEditRoute::class) == true -> TopLevelDestination.SETTINGS
         currentDestination?.hasRoute(DeckListRoute::class) == true ||
             currentDestination?.hasRoute(CustomDeckRoute::class) == true -> TopLevelDestination.CARDS
+        currentDestination?.hasRoute(LanRequestRoute::class) == true -> TopLevelDestination.LAN
         currentDestination?.hasRoute(PoolEditRoute::class) == true ||
             currentDestination?.hasRoute(PoolPickRoute::class) == true -> TopLevelDestination.POOL
         else -> null
@@ -61,7 +76,7 @@ fun AppNavHost(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             NavigationBar {
-                TopLevelDestination.entries.forEach { destination ->
+                TopLevelDestination.entries.filter { it != TopLevelDestination.LAN || lanEnabled }.forEach { destination ->
                     NavigationBarItem(
                         selected = destination == currentTab,
                         onClick = {
@@ -113,6 +128,13 @@ fun AppNavHost(
                 )
             }
             composable<DiceRoute> { DiceScreen() }
+            composable<LanRoute> {
+                LanScreen(
+                    onOpenPlayer = { id -> navController.navigate(LanRequestRoute(id)) },
+                    onOpenRequest = { navigationViewModel.openRequestFromLan() },
+                )
+            }
+            composable<LanRequestRoute> { DiceScreen(onBack = { navController.popBackStack() }) }
             composable<CardsRoute> { CardTableScreen(onOpenDecks = { navController.navigate(DeckListRoute) }) }
             composable<DeckListRoute> {
                 DeckListScreen(

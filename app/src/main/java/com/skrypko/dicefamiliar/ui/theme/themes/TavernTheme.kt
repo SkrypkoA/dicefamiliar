@@ -1,5 +1,6 @@
 package com.skrypko.dicefamiliar.ui.theme.themes
 
+import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoFixHigh
 import androidx.compose.material.icons.outlined.AutoStories
@@ -78,13 +79,14 @@ val TavernTheme = AppThemeSpec(
             titleSmall = titleSmall.serif(),
         )
     },
-    // A magic wand for numbers, a treasure chest for pools, a spellbook for settings.
+    // A magic wand for numbers, a treasure chest for pools, a spellbook for settings, a gathering for LAN.
     icons = ThemeIcons(
         number = Icons.Outlined.AutoFixHigh,
         pool = Icons.Outlined.Inventory2,
         dice = Icons.Rounded.Casino,
         cards = Icons.Outlined.Style,
         settings = Icons.Outlined.AutoStories,
+        lan = Icons.Outlined.Groups,
         roll = Icons.Rounded.Casino,
         generate = Icons.Outlined.AutoFixHigh,
     ),

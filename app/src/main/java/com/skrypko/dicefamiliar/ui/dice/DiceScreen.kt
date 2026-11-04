@@ -53,6 +53,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.Icons
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.testTag
 import com.skrypko.dicefamiliar.R
 import com.skrypko.dicefamiliar.domain.dice.pool.SuccessCriterion
 import com.skrypko.dicefamiliar.domain.dice.NotationError
@@ -71,8 +78,9 @@ import com.skrypko.dicefamiliar.ui.theme.DiceFamiliarTheme
 import com.skrypko.dicefamiliar.ui.theme.LocalThemeStyle
 import kotlinx.coroutines.launch
 
+/** The Dice tab, or (with [onBack]) the host's request screen for one LAN player. */
 @Composable
-fun DiceScreen(viewModel: DiceViewModel = hiltViewModel()) {
+fun DiceScreen(onBack: () -> Unit = {}, viewModel: DiceViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val haptics = LocalHapticFeedback.current
     val shake = remember { Animatable(0f) }
@@ -132,6 +140,7 @@ fun DiceScreen(viewModel: DiceViewModel = hiltViewModel()) {
         onShareImage = { image ->
             scope.launch { shareImage(context, image, "roll.png", resources.getString(R.string.dice_share)) }
         },
+        lan = DiceLanActions(onOpenRequest = viewModel::openRequest, onDeclineRequest = viewModel::declineRequest, onBack = onBack),
         pool = DicePoolActions(
             onModeChange = viewModel::setPoolMode,
             onCountChange = viewModel::onPoolCountChange,
@@ -156,6 +165,77 @@ fun DiceScreen(viewModel: DiceViewModel = hiltViewModel()) {
  * Dice screen layout: a collapsible panel (palette, formula, controls, modes) on top, then the
  * dice tray taking all remaining height, then the sum bar (and the Roll button in Quick roll).
  */
+/** LAN callbacks of [DiceContent]: the player's request banner and the host's request screen. */
+data class DiceLanActions(
+    val onOpenRequest: () -> Unit = {},
+    val onDeclineRequest: () -> Unit = {},
+    val onBack: () -> Unit = {},
+)
+
+const val LAN_SEND_TAG = "lan_send"
+const val LAN_BANNER_TAG = "lan_banner"
+const val LAN_LOCKED_TAG = "lan_locked_request"
+
+/** Host's request screen: who the dice are for, and back to the LAN tab. */
+@Composable
+private fun RequestHeader(name: String, onBack: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        IconButton(onClick = onBack) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.lan_back))
+        }
+        Text(stringResource(R.string.lan_request_for, name), style = MaterialTheme.typography.titleLarge, maxLines = 1)
+    }
+}
+
+/** Player: a host asks for a roll; Roll locks the panel to those dice. */
+@Composable
+private fun IncomingBanner(incoming: IncomingRoll, onOpen: () -> Unit, onDecline: () -> Unit) {
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+        modifier = Modifier.fillMaxWidth().testTag(LAN_BANNER_TAG),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp)) {
+            Text(
+                stringResource(R.string.lan_request_text, incoming.from.name, requestDice(incoming)),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onDecline) { Text(stringResource(R.string.lan_decline)) }
+            Button(onClick = onOpen) { Text(stringResource(R.string.lan_roll_it)) }
+        }
+    }
+}
+
+/** Player: the panel while rolling a host's request — only those dice, nothing to edit. */
+@Composable
+private fun LockedRequestPanel(request: IncomingRoll, onDecline: () -> Unit) {
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxWidth().testTag(LAN_LOCKED_TAG),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.lan_request_from, request.from.name), style = MaterialTheme.typography.titleMedium)
+            Text(requestDice(request), style = MaterialTheme.typography.headlineMedium, fontFamily = FontFamily.Monospace)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(R.string.lan_request_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = onDecline) { Text(stringResource(R.string.lan_decline)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun requestDice(request: IncomingRoll): String =
+    if (request.pool) stringResource(R.string.lan_request_pool, request.notation) else request.notation
+
 /** Dice pool mode callbacks of [DiceContent]; defaults do nothing (handy in tests and previews). */
 data class DicePoolActions(
     val onModeChange: (Boolean) -> Unit = {},
@@ -187,6 +267,7 @@ fun DiceContent(
     onShareImage: (ImageBitmap) -> Unit = {},
     onCopy: (String) -> Unit = {},
     pool: DicePoolActions = DicePoolActions(),
+    lan: DiceLanActions = DiceLanActions(),
 ) {
     var capturing by remember { mutableStateOf(false) }
     val quickRoll = state.settings.quickRoll
@@ -210,23 +291,33 @@ fun DiceContent(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            state.requestTarget?.let { target -> RequestHeader(target.name, lan.onBack) }
+            val incoming = state.incoming
+            if (incoming != null && state.activeRequest == null) {
+                IncomingBanner(incoming, onOpen = lan.onOpenRequest, onDecline = lan.onDeclineRequest)
+            }
             val panel: @Composable () -> Unit = {
-                DicePanel(
-                    state = state,
-                    onNotationChange = onNotationChange,
-                    onDieTapped = onDieTapped,
-                    onDieLongPressed = onDieLongPressed,
-                    onModifier = onModifier,
-                    onClear = onClear,
-                    onModeChange = onModeChange,
-                    onRoll = onRoll,
-                    onToggleFormula = onToggleFormula,
-                    shake = fieldShake,
-                    modifier = Modifier.heightIn(max = maxPanelHeight),
-                    onPoolModeChange = pool.onModeChange,
-                    onPoolCountChange = pool.onCountChange,
-                    onPoolCountStep = pool.onCountStep,
-                )
+                val active = state.activeRequest
+                if (active != null) {
+                    LockedRequestPanel(active, lan.onDeclineRequest)
+                } else {
+                    DicePanel(
+                        state = state,
+                        onNotationChange = onNotationChange,
+                        onDieTapped = onDieTapped,
+                        onDieLongPressed = onDieLongPressed,
+                        onModifier = onModifier,
+                        onClear = onClear,
+                        onModeChange = onModeChange,
+                        onRoll = onRoll,
+                        onToggleFormula = onToggleFormula,
+                        shake = fieldShake,
+                        modifier = Modifier.heightIn(max = maxPanelHeight),
+                        onPoolModeChange = pool.onModeChange,
+                        onPoolCountChange = pool.onCountChange,
+                        onPoolCountStep = pool.onCountStep,
+                    )
+                }
             }
             FeaturePanel(visible = state.panelVisible, animate = state.settings.animationsEnabled) { panel() }
             FeatureHandleBar(
@@ -247,7 +338,7 @@ fun DiceContent(
             )
             DiceTray(
                 state = state,
-                swipeToRoll = !quickRoll,
+                swipeToRoll = !quickRoll && !state.requestMode,
                 onSwipeRoll = onRoll,
                 modifier = Modifier.weight(1f),
             )
@@ -262,7 +353,18 @@ fun DiceContent(
                 )
             }
             RollSumBar(state = state)
-            if (quickRoll) {
+            val target = state.requestTarget
+            if (target != null) {
+                Button(
+                    onClick = { onRoll(0f) },
+                    enabled = state.canRoll && !state.awaitingReply,
+                    modifier = Modifier.fillMaxWidth().height(56.dp).testTag(LAN_SEND_TAG),
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.lan_send_to, target.name), style = MaterialTheme.typography.titleMedium)
+                }
+            } else if (quickRoll) {
                 Button(
                     onClick = { onRoll(0f) },
                     enabled = state.canRoll,

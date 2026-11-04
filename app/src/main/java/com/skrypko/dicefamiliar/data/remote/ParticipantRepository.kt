@@ -15,6 +15,9 @@ import kotlinx.coroutines.sync.withLock
 /** Identity of this device for local and (future) remote actions. */
 interface ParticipantRepository {
     suspend fun self(): Participant
+
+    /** Changes this device's name as other players see it (trimmed, 1–40 characters). */
+    suspend fun rename(name: String)
 }
 
 @Singleton
@@ -36,7 +39,17 @@ class DataStoreParticipantRepository @Inject constructor(
         return result!!.also { cached = it }
     }
 
+    override suspend fun rename(name: String) {
+        val clean = name.trim().take(MAX_NAME)
+        if (clean.isEmpty()) return
+        mutex.withLock {
+            dataStore.edit { it[NAME] = clean }
+            cached = cached?.copy(name = clean)
+        }
+    }
+
     private companion object {
+        const val MAX_NAME = 40
         val ID = stringPreferencesKey("participant.id")
         val NAME = stringPreferencesKey("participant.name")
     }

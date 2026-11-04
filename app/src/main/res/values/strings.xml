@@ -11,6 +11,7 @@
     <string name="tab_pool">Pool</string>
     <string name="tab_dice">Dice</string>
     <string name="tab_cards">Cards</string>
+    <string name="tab_lan">LAN</string>
 
     <!-- Placeholder screen titles -->
     <string name="title_number">Random number</string>
@@ -561,4 +562,95 @@
     <string name="help_dice_groups_text">Under the tray, tap + to add a group: a target and ≥ (+), ≤ (−) or =, for example 5+ or =1. Each chip shows how many dice it holds. Tap a chip to select it (one at a time): the dice are sorted and the group is highlighted, and the bar counts its successes. Long-press a chip to delete it (you\'ll be asked to confirm). With a group selected, a swipe (or Roll) rolls only that group\'s dice.</string>
     <string name="help_dice_reroll_title">Reroll or roll a group</string>
     <string name="help_dice_reroll_text">Reroll rolls only the selected group\'s dice again and keeps the rest. Roll group starts a new pool with that many dice. Example: roll 10d6 to hit, select =1 and Reroll; select 5+ and Roll group to wound; then select 4+ to count the wounds.</string>
+
+    <!-- LAN play: notifications -->
+    <string name="lan_title">LAN play</string>
+    <string name="lan_leave">Leave</string>
+    <string name="lan_channel_session">LAN session</string>
+    <string name="lan_channel_session_description">Shown while you host a table or play at one, so roll requests keep arriving.</string>
+    <string name="lan_channel_requests">Roll requests</string>
+    <string name="lan_channel_requests_description">A host asks you to roll (sound and vibration).</string>
+    <string name="lan_channel_requests_vibrate">Roll requests (vibration only)</string>
+    <string name="lan_channel_requests_vibrate_description">A host asks you to roll (vibration, no sound).</string>
+    <string name="lan_request_title">Roll request</string>
+    <string name="lan_request_text">%1$s asks you to roll %2$s</string>
+    <string name="lan_request_pool">%1$s (pool)</string>
+    <plurals name="lan_session_hosting">
+        <item quantity="one">Hosting · %1$d player</item>
+        <item quantity="other">Hosting · %1$d players</item>
+    </plurals>
+    <string name="lan_session_playing">Connected to %1$s\'s table</string>
+    <string name="lan_back">Back to the table</string>
+    <string name="lan_request_for">Dice for %1$s</string>
+    <string name="lan_send_to">Send to %1$s</string>
+    <string name="lan_waiting_for">Waiting for %1$s to roll…</string>
+    <string name="lan_request_empty">Pick dice above, then send them to %1$s. %1$s rolls them on their phone and you see the result here.</string>
+    <string name="lan_decline">Decline</string>
+    <string name="lan_roll_it">Roll</string>
+    <string name="lan_request_from">%1$s asks you to roll</string>
+    <string name="lan_request_hint">Swipe the tray (or tap Roll) to roll them.</string>
+    <string name="lan_help">How LAN play works</string>
+    <string name="lan_host">Host a table</string>
+    <string name="lan_host_hint">Your phone becomes the table: players join it and you ask them to roll.</string>
+    <string name="lan_tables_nearby">Tables nearby</string>
+    <string name="lan_no_tables">No tables found yet. Both phones must be on the same Wi-Fi (or hotspot), with LAN play on and one of them hosting. Over a VPN, use Join by address.</string>
+    <string name="lan_tap_to_join">Tap to join</string>
+    <string name="lan_join_by_address">Join by address</string>
+    <string name="lan_join_by_address_hint">Type the address shown on the host\'s LAN screen, for example 192.168.1.20 or a VPN address like 100.101.2.3. The port is optional.</string>
+    <string name="lan_address">Host address</string>
+    <string name="lan_address_invalid">That isn\'t an address. Use something like 192.168.1.20 or 100.101.2.3:47321.</string>
+    <string name="lan_join">Join</string>
+    <string name="lan_your_table">Your table: %1$s</string>
+    <string name="lan_stop_hosting">Stop</string>
+    <string name="lan_your_addresses">Players on another network or a VPN can join by address:</string>
+    <string name="lan_vpn">VPN</string>
+    <string name="lan_players">Players</string>
+    <string name="lan_no_players">Waiting for players… On their phones: LAN tab → your table.</string>
+    <string name="lan_tap_to_request">Tap to ask for a roll</string>
+    <string name="lan_remove_player">Remove %1$s</string>
+    <string name="lan_remove_title">Remove player?</string>
+    <string name="lan_remove_text">%1$s leaves your table, with their roll log.</string>
+    <string name="lan_remove">Remove</string>
+    <string name="lan_request_waiting">%1$s asks you to roll. Tap to open the dice.</string>
+    <string name="lan_my_rolls">My rolls</string>
+    <string name="lan_no_rolls">No requests yet.</string>
+    <string name="lan_entry_waiting">%1$s · waiting</string>
+    <string name="lan_entry_declined">%1$s · declined</string>
+    <string name="lan_entry_cancelled">%1$s · cancelled</string>
+    <string name="lan_entry_failed">%1$s · could not be rolled</string>
+    <string name="lan_entry_disconnected">%1$s · disconnected</string>
+    <string name="lan_error_connect">Couldn\'t reach that table. Check that both phones are on the same network.</string>
+    <string name="lan_error_host_lost">The connection to the table was lost.</string>
+    <string name="lan_error_host_stopped">The host closed the table.</string>
+    <string name="lan_error_kicked">The host removed you from the table.</string>
+    <string name="lan_error_version">The other phone has a different version of Dice Familiar. Update both.</string>
+    <string name="lan_error_hosting">Couldn\'t start hosting. Check the Wi-Fi connection.</string>
+    <string name="help_lan_what_title">What is LAN play</string>
+    <string name="help_lan_what_text">One phone hosts a table (for example the game master); the others join it. The host chooses dice for a player, the player rolls them on their own phone, and the host sees the result. Rolls happen on the player\'s phone, never on the host\'s.</string>
+    <string name="help_lan_host_title">Host a table</string>
+    <string name="help_lan_host_text">Tap Host a table. Your table appears on the other phones, and the players who join are listed here. Long-press a player to remove them. Stop closes the table for everyone.</string>
+    <string name="help_lan_join_title">Join a table</string>
+    <string name="help_lan_join_text">Tables on the same Wi-Fi appear under Tables nearby: tap one to join. If it doesn\'t show up, use Join by address with the address shown on the host\'s screen. Your name at the table is set in Settings → LAN play.</string>
+    <string name="help_lan_request_title">Ask a player to roll</string>
+    <string name="help_lan_request_text">As host, tap a player: the dice screen opens for them. Pick dice (Sum or Pool) and tap Send. You can\'t roll them yourself; you see “Waiting…” and then the player\'s dice and result. The history button shows that player\'s rolls.</string>
+    <string name="help_lan_roll_title">Roll a request</string>
+    <string name="help_lan_roll_text">As player, a request appears on the Dice screen (and as a notification when the app is in the background). Tap Roll: the dice are locked to the host\'s choice, swipe to roll them, and the result goes to the host. Decline refuses. Your own dice come back afterwards.</string>
+    <string name="help_lan_notifications_title">Notifications</string>
+    <string name="help_lan_notifications_text">While you host or play, a small notification keeps the connection alive; Leave ends the session. In Settings → LAN play choose how requests are announced: sound and vibration, vibration only, or off; the system settings link changes them like for any other app.</string>
+    <string name="help_lan_vpn_title">Playing over a VPN</string>
+    <string name="help_lan_vpn_text">Phones on different networks can play through a mesh VPN such as Tailscale, ZeroTier or WireGuard: install it on every phone and connect them to the same VPN. Tables are usually not found automatically over a VPN, so the host reads its VPN address on the LAN screen (marked VPN, for example 100.101.2.3) and players type it in Join by address. Port 47321 is used unless it is busy.</string>
+    <string name="help_lan_trouble_title">If it doesn\'t connect</string>
+    <string name="help_lan_trouble_text">Check that both phones are on the same Wi-Fi (guest or public networks often block phones from seeing each other; a phone\'s hotspot works). Turn off any VPN you don\'t use for playing. Make sure both have the same app version. Try Join by address.</string>
+    <string name="settings_section_lan">LAN play</string>
+    <string name="settings_lan">LAN play</string>
+    <string name="settings_lan_summary">Adds the LAN tab: host a table or join one, and roll dice for each other</string>
+    <string name="settings_lan_name">Your name at the table</string>
+    <string name="settings_lan_name_hint">Other players see this name</string>
+    <string name="settings_lan_name_save">Save</string>
+    <string name="settings_lan_notifications">Roll request notifications</string>
+    <string name="settings_lan_notify_sound">Sound and vibration</string>
+    <string name="settings_lan_notify_vibrate">Vibration only</string>
+    <string name="settings_lan_notify_off">Off</string>
+    <string name="settings_lan_system_notifications">System notification settings</string>
+    <string name="settings_lan_connection">Connection</string>
 </resources>

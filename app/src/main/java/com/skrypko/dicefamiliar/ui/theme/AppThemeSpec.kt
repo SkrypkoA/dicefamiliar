@@ -23,6 +23,8 @@ data class ThemeIcons(
     val dice: ImageVector,
     val cards: ImageVector,
     val settings: ImageVector,
+    /** The LAN play tab. */
+    val lan: ImageVector,
     /** Dice: the Quick-roll Roll button. */
     val roll: ImageVector,
     /** Number: the Generate button. */

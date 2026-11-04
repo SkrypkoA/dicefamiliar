@@ -1,5 +1,6 @@
 package com.skrypko.dicefamiliar.ui.theme.themes
 
+import androidx.compose.material.icons.sharp.Lan
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.sharp.Bolt
@@ -97,13 +98,14 @@ val CyberpunkTheme = AppThemeSpec(
         large = CutCornerShape(12.dp),
         extraLarge = CutCornerShape(16.dp),
     ),
-    // A chip for numbers, storage for pools, a terminal for settings, a bolt to act.
+    // A chip for numbers, storage for pools, a terminal for settings, a network for LAN, a bolt to act.
     icons = ThemeIcons(
         number = Icons.Sharp.Memory,
         pool = Icons.Sharp.Storage,
         dice = Icons.Sharp.Casino,
         cards = Icons.Sharp.Style,
         settings = Icons.Sharp.Terminal,
+        lan = Icons.Sharp.Lan,
         roll = Icons.Sharp.Bolt,
         generate = Icons.Sharp.Bolt,
     ),

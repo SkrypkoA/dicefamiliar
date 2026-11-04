@@ -1,5 +1,6 @@
 package com.skrypko.dicefamiliar.ui.dice
 
+import androidx.lifecycle.SavedStateHandle
 import com.skrypko.dicefamiliar.data.dice.DiceState
 import com.skrypko.dicefamiliar.domain.dice.DiceRollHandler
 import com.skrypko.dicefamiliar.domain.dice.DiceRoller
@@ -68,6 +69,7 @@ class DiceViewModelTest {
             FakeParticipantRepository(),
             sound,
             FakeDiceSetRepository(),
+            SavedStateHandle(),
         ).also { runCurrent() }
     }
 

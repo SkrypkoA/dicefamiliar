@@ -27,6 +27,7 @@
   - [Pool picker](#pool-picker)
   - [Card drawer](#card-drawer)
   - [One layout for every feature](#one-layout-for-every-feature)
+  - [LAN play](#lan-play)
   - [Themes](#themes)
   - [Settings](#settings)
 - [Custom dice skins](#custom-dice-skins)
@@ -36,6 +37,7 @@
   - [Try the examples](#try-the-examples)
 - [Custom card decks](#custom-card-decks)
 - [Pool import and export](#pool-import-and-export)
+- [Testing LAN play from a PC](#testing-lan-play-from-a-pc)
 - [Requirements](#requirements)
 - [Build and run](#build-and-run)
 - [Tests and checks](#tests-and-checks)
@@ -58,7 +60,7 @@
 | 🔢 **Random number generator** | ✅ Done |
 | 📋 **Pool picker:** named lists with images and colours, CSV/ZIP import & export | ✅ Done |
 | 🃏 **Card drawer:** 36 / 52 / 54-card decks, custom and uploaded decks | ✅ Done |
-| 📡 LAN play: ask another player's phone to roll | 🚧 Planned (the request/response layer is ready) |
+| 📡 **LAN play (dice):** host a table, ask players to roll on their phones, per-player roll log | ✅ Done |
 
 ### Dice roller
 - **Dice panel:** tap a die to add it to the formula, and **long-press a die to remove one**. Tap **?** for a short guide. The panel offers d4, d6, d8, d10, d12, d20, d100 and custom dN dice.
@@ -164,6 +166,26 @@ Pick one in **Settings → Appearance**. Each card shows a small preview of the 
 | **Cyberpunk** | Bright neon on black. Cyan, magenta and yellow, monospace type, cut corners, and dice on a **glowing neon grid**. Its icons are a chip, storage, a terminal and a bolt. |
 
 Every screen also has a **?** button that explains how to use it, for example how to add and remove dice.
+
+### LAN play
+Play at one table with several phones: the host (for example the game master) asks a player to roll, the player rolls **on their own phone**, and the host sees the result.
+
+1. **Turn it on:** Settings → **LAN play**. This adds the **LAN** tab and lets you set your name at the table.
+2. **Host:** LAN tab → **Host a table**. Players who join are listed with their last roll. Long-press a player to remove them, and **Stop** closes the table.
+3. **Join:** on the other phones, LAN tab → your table under **Tables nearby** → tap it. If it doesn't appear, use **Join by address** with the address shown on the host's screen.
+4. **Ask for a roll:** the host taps a player and the dice screen opens for them. Pick dice (Sum or **Pool**) and tap **Send to …**. The host can't roll them; it shows "Waiting…" and then the player's dice and result. The history button shows **that player's roll log**.
+5. **Roll it:** the player gets a banner on the Dice screen, or a **notification** when the app is in the background. **Roll** locks the dice to the host's choice; swipe to roll. **Decline** refuses. The player's own dice come back afterwards.
+
+- **Notifications:** while hosting or playing, a small ongoing notification keeps the connection alive, and its **Leave** button ends the session. Requests can use **sound and vibration**, **vibration only** or be **off** (Settings → LAN play). The system notification settings are one tap away.
+- **Network:** both phones on the **same Wi-Fi**, or one phone's hotspot. Guest and public Wi-Fi often stop phones from seeing each other. Nothing goes to the internet.
+- **Over a VPN:** phones on different networks can play through a mesh VPN such as **Tailscale**, **ZeroTier** or **WireGuard**:
+  1. Install it on every phone and join them to the same VPN network.
+  2. The host opens the LAN tab after **Host a table** and reads the address marked **VPN** (for example `100.101.2.3:47321`).
+  3. Players use **Join by address** and type it (the port is optional: hosts use **47321** when it's free).
+
+  Automatic discovery usually doesn't cross a VPN, but joining by address does. ZeroTier networks with multicast enabled may even show the table under Tables nearby.
+- **No second phone?** [`tools/lan_desktop`](tools/lan_desktop/dicefamiliar_lan.py) is a desktop stand-in. See [Testing LAN play from a PC](#testing-lan-play-from-a-pc).
+- **Safety:** each roll happens on the player's phone, which re-checks the dice as untrusted input. Anyone on the network can join a table, and the host can remove players. Both phones need the same app version.
 
 ### Settings
 - **Appearance:** the theme, plus dark mode and dynamic colours for Classic.
@@ -293,6 +315,25 @@ pool.zip
 adb push docs/pool-examples/classes.zip /sdcard/Download/   # then Pool → + → Import
 ```
 
+## Testing LAN play from a PC
+`tools/lan_desktop/dicefamiliar_lan.py` is a small desktop app that speaks the same LAN protocol, so a Linux PC can play the second phone. It needs Python 3 only; the avahi tools are optional, for finding and announcing tables. It opens a page in your browser:
+
+```bash
+python3 tools/lan_desktop/dicefamiliar_lan.py --name "Desk"     # UI at http://127.0.0.1:8765
+```
+
+- **PC as player:** the phone taps **Host a table**. On the page: **Search** → the phone's table, or **Join by address** with the address the phone shows. Requests from the phone appear with **Roll** / **Decline**. Tick **Roll requests automatically** to test fast.
+- **PC as host:** **Host a table** on the page. The phone finds it under **Tables nearby**, or uses **Join by address** with the PC's address shown on the page. Pick the phone's player, type dice (`3d6+2`, `10d6` + pool, `1d20` + advantage) and **Send**. Each player has their own roll log.
+- **Phone on USB, different networks:** tunnel through adb, then use `127.0.0.1` as the address:
+  ```bash
+  adb reverse tcp:47321 tcp:47321   # the phone joins the PC's table: Join by address → 127.0.0.1
+  adb forward tcp:47321 tcp:47321   # the PC joins the phone's table: Join by address → 127.0.0.1
+  ```
+- **Checks without a phone:**
+  - `--self-test` runs a host and a player on localhost.
+  - `LanDesktopInteropTest` (unit tests, skipped without `python3`) runs the app's own session code against the tool over TCP, in both roles.
+  - `LanDesktopCompatTest` decodes the tool's messages (`app/src/test/resources/lan/`, written by `--write-fixtures`).
+
 ## Requirements
 - **Android 7.0+** (minSdk 24), targeting API 37
 - To build it:
@@ -394,6 +435,7 @@ Generators for the app's assets. Run them from the repository root with Python 3
 | `tools/gen_card_sounds.py` | card flick and shuffle `res/raw/card_flick.ogg`, `card_shuffle.ogg` | Python 3 + ffmpeg |
 | `tools/gen_card_examples.py` | example decks in `docs/card-examples/` | Python 3 + Pillow |
 | `tools/gen_pool_examples.py` | example pools in `docs/pool-examples/` (`classes.zip`, `drinks.csv`, `classes-preview.png`) | Python 3 + Pillow |
+| `tools/lan_desktop/dicefamiliar_lan.py` | a desktop LAN stand-in (host or player) for testing LAN play; `--self-test`, `--write-fixtures app/src/test/resources/lan` | Python 3 (+ avahi tools, optional) |
 | `tools/gen_app_icon.py` | the adaptive launcher icon in `res/drawable/` | Python 3 |
 | `tools/render_legacy_icons.sh` | legacy launcher PNGs for API 24–25 in `res/mipmap-*/` | Python 3 + ImageMagick 7 (`magick`) |
 
