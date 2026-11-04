@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew testDebugUnitTest --tests *)",
+      "Bash(./gradlew assembleDebug)",
+      "Bash(./gradlew lint)",
+      "Bash(./gradlew lintDebug)",
+      "Bash(./gradlew compileDebugKotlin)",
+      "Bash(./gradlew compileDebugUnitTestKotlin)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git branch *)",
+      "Bash(git fetch *)",
+      "Bash(git merge-base *)",
+      "Bash(gh issue list *)",
+      "Bash(gh issue view *)",
+      "Bash(gh pr list *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr checks *)",
+      "Bash(gh project list *)",
+      "Bash(gh project view *)",
+      "Bash(gh project field-list *)",
+      "Bash(gh project item-list *)",
+      "Bash(adb devices)",
+      "Bash(python3 tools/lan_desktop/dicefamiliar_lan.py --self-test)"
+    ],
+    "ask": [
+      "Bash(./gradlew test)",
+      "Bash(./gradlew test *)",
+      "Bash(./gradlew connectedAndroidTest *)",
+      "Bash(./gradlew connectedAndroidTest)",
+      "Bash(./gradlew connectedDebugAndroidTest *)",
+      "Bash(git push *)",
+      "Bash(gh pr create *)",
+      "Bash(gh pr merge *)",
+      "Bash(gh issue close *)",
+      "Bash(gh api * -X *)",
+      "Bash(gh api * --method *)"
+    ],
+    "deny": [
+      "Read(./local-examples/**)",
+      "Edit(./local-examples/**)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git push origin master*)",
+      "Bash(git merge master*)",
+      "Bash(git merge origin/master*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_git.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

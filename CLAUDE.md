@@ -25,6 +25,9 @@ This file provides guidance to Claude Code when working with code in this reposi
   - [Shared](#shared)
 - [Common Commands](#common-commands)
 - [Git Workflow Policy](#git-workflow-policy)
+- [Claude Code tooling](#claude-code-tooling)
+- [Subagents](#subagents)
+- [Skills plugin (superpowers)](#skills-plugin-superpowers)
 - [Coding Conventions](#coding-conventions)
 
 ## Project Overview
@@ -428,6 +431,67 @@ When a feature is done, follow these steps in order:
    When every issue of a milestone is closed and its last PR is merged, close the milestone.
 
 The rule is: one feature means one branch, one squashed commit and one PR. Never merge `master` into a feature branch; always rebase instead.
+
+**Tooling changes are not features.** Work that doesn't change the app (Claude Code setup in `.claude/`, build or CI scripts, docs-only changes) uses a `tooling/<name>` branch and gets **no milestone and no issue**. Everything else is the same: one squashed commit (`Tooling: <short description>`), a rebase onto `master`, a PR. It still goes on the project board with Feature *Tooling & workflow*. Run the checks that match what changed (e.g. the hook self-test); `./gradlew test lint` only when Gradle or app files changed, and only after asking.
+
+**Project board:** https://github.com/users/SkrypkoA/projects/1 (number 1, owner `SkrypkoA`). Every issue and PR is an item with **Status** (Todo / In Progress / Done), **Feature** (Dice roller, Dice pool, Dice sets, Number generator, Pool picker, Card drawer, LAN play, Themes & design, Tooling & workflow) and **Milestone**. New issues and PRs are added to it; planned work without an issue yet is a draft item.
+
+## Claude Code tooling
+
+Everything in `.claude/` is shared through git except `settings.local.json` and `plans/` (both gitignored).
+
+- **`.claude/settings.json`: permissions.**
+  - **Allowed without a prompt:** related unit tests (`./gradlew testDebugUnitTest --tests …`), lint, `assembleDebug`, compile tasks, read-only git and `gh` queries.
+  - **Asks first:** the full suite (`./gradlew test …`), connected tests, `git push`, `gh pr create`/`merge`, closing issues, `gh api` writes.
+  - **Denied:** reading or editing `local-examples/`, plain force pushes, pushing to master, merging master.
+- **`.claude/hooks/guard_git.py`: a PreToolUse hook on Bash** that enforces the Git Workflow Policy even inside compound commands. It blocks:
+  - committing, merging or pushing while on master
+  - pushing to master
+  - force pushes other than `--force-with-lease`
+  - merging or pulling master into a feature branch
+  - staging `local-examples/`
+  
+  Self-test: `python3 -I .claude/hooks/test_guard_git.py`. Update both files together.
+- **`.claude/skills/`: project skills.**
+
+  | Skill | When |
+  |---|---|
+  | `ship-feature` (user-invoked: `/ship-feature`) | The feature is done: checks, review, squash, rebase, push, PR with milestone and `Closes #N`, board. |
+  | `build-apk` (user-invoked: `/build-apk`) | The user said yes to an APK before a merge. |
+  | `track-feature` | A new feature starts: milestone, issues, board items, branch. |
+  | `new-feature-screen` | Adding or restructuring a feature play screen (layout, theming, sharing, help, tests). |
+  | `new-remote-action` | A feature action that must run locally and over LAN (e.g. `cards.draw`). |
+  | `add-theme` | A new `AppThemeSpec`. |
+
+- Keep the skills in step with this file: when a rule here changes, update the skill that repeats it.
+
+## Subagents
+
+Project agents live in `.claude/agents/`. Each one starts cold: the prompt must carry the branch, the exact files or packages in scope, the relevant CLAUDE.md rules (pasted, not just referenced) and the exact test classes to run.
+
+| Agent | Delegate to it | Model |
+|---|---|---|
+| `gradle-runner` | Any Gradle run (named test classes, lint, assembleDebug). Returns only the failures. Runs the full suite or connected tests only when the prompt says the user approved it. | haiku |
+| `domain-tdd` | A self-contained piece of `domain/` logic with a clear spec, test-first. No UI, Hilt, Room or git. | sonnet |
+| `lan-protocol-keeper` | After any change to `LanProtocol`, `DiceRollPayload`, `RollOutcome` or the dice rules: sync `tools/lan_desktop/`, regenerate the fixtures, run the LAN desktop tests. | sonnet |
+| `code-reviewer` | Read-only review of `git diff master...HEAD` against these rules before every PR. | opus |
+
+- Codebase searches ("where is X used") go to the built-in **Explore** agent.
+- **Keep in the main session:** feature design and planning, all Compose/UI/gesture/theme/3D work, Hilt wiring, Room migrations, deciding which tests are related, and every user-facing decision.
+- **Never delegate:** asking before the full suite, asking whether to build the APK before a merge, opening/merging PRs or closing milestones, anything in `local-examples/`, and edits to CLAUDE.md, memory or settings.
+- Only one agent runs Gradle at a time (daemon and lock contention).
+
+## Skills plugin (superpowers)
+
+The `superpowers` plugin (`obra/superpowers`) is installed per developer at local scope (`claude plugin install superpowers@claude-plugins-official --scope local`, written to the gitignored `.claude/settings.local.json`). **This file overrides any skill's workflow.**
+
+- **Use:** `systematic-debugging` for hard bugs; `verification-before-completion` before claiming anything works; `brainstorming` + `writing-plans` for large features; `executing-plans` (inline) to carry a plan out; `requesting-code-review` / `receiving-code-review` (the reviewer is the `code-reviewer` agent).
+- **Git:** never use `finishing-a-development-branch` or `using-git-worktrees`. Finish work only through the Git Workflow Policy above (feature branch, one squashed commit, rebase on master, milestone + `Closes #N` PR). Never merge locally into master.
+- **Tests:** during a task run only related tests; ask before the full suite, even when a skill's checklist says to run everything. Before merging a PR, ask whether to build the APK.
+- **TDD:** red-green-refactor is required for `domain/` and testable `data/` logic only. For Compose UI, rendering, sounds and themes, tests may come after the code; never delete working code because it was written before its test.
+- **Plans and specs:** keep them in the conversation or in the gitignored `.claude/plans/`. Never commit `docs/superpowers/`.
+- **Execution:** don't use `subagent-driven-development` or `dispatching-parallel-agents` for work where several agents would run Gradle.
+- **Small fixes** (one screen, fewer than ~3 files): skip brainstorming and planning.
 
 ## Coding Conventions
 

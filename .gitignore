@@ -22,3 +22,8 @@ __pycache__/
 
 # Private example pools with third-party art (never committed)
 /local-examples/
+
+# Claude Code: per-developer settings (local plugins such as superpowers) and plans
+/.claude/settings.local.json
+/.claude/plans/
+/docs/superpowers/
