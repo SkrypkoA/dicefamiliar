@@ -1,4 +1,5 @@
-"""Generate the Dice familiar app icon: a small fairy dragon shaped like a gecko (seen from above).
+"""Generate the Dice familiar app icon: a small fairy dragon shaped like a gecko (seen from above),
+hugging a big d6 against its belly with both front paws.
 
 Usage: python3 tools/gen_app_icon.py [--preview out_dir]
 
@@ -31,6 +32,11 @@ WING_EDGE = "#7FC8EC"
 EYE = "#FFE07A"
 PUPIL = "#1B1B2F"
 HORN = "#F4B95A"
+DIE = "#FFF4DA"
+DIE_TOP = "#FFFFFF"
+DIE_SIDE = "#E3D6F5"
+DIE_EDGE = "#2B2350"
+PIP = "#5A4AA0"
 OUTLINE_W = 2.4
 
 
@@ -64,10 +70,14 @@ def stroke(d, color, width, alpha=1.0, mono=1.0):
 
 
 # ---------------- geometry ----------------
+DIE_CENTER = (54, 58.2)  # in front of the belly
+DIE_HALF = 9.4  # half the front face
+DIE_DEPTH = 2.6  # the visible top and right faces
+FG_SHIFT_Y = 0.0
 HEAD = (54, 37, 10.5, 8.6)
 TORSO = (54, 55, 8.2, 12.5)
-LEGS = [  # shoulder, elbow, foot
-    [(48.5, 48), (41, 46), (36.5, 40.5)],
+LEGS = [  # shoulder, elbow, foot: the front paws reach up to grip the die
+    [(48.6, 47.6), (38.6, 52.4), (42.8, 59.6)],
     [(49, 62), (41.5, 65), (37.5, 71)],
 ]
 LEG_W = 3.8
@@ -88,12 +98,16 @@ def toe_pads(elbow, foot):
     return pads
 
 
+def front_legs():
+    return [LEGS[0], mirror_x(LEGS[0])]
+
+
+def back_legs():
+    return [LEGS[1], mirror_x(LEGS[1])]
+
+
 def all_legs():
-    legs = []
-    for leg in LEGS:
-        legs.append(leg)
-        legs.append(mirror_x(leg))
-    return legs
+    return front_legs() + back_legs()
 
 
 def wing_left():
@@ -130,22 +144,55 @@ def mirror_path(d):
     return " ".join(result)
 
 
+def leg_shapes(legs, outline):
+    extra = OUTLINE_W if outline else 0
+    color = BODY_DARK if outline else BODY
+    shapes = [stroke(polyline(leg), color, LEG_W + extra) for leg in legs]
+    for leg in legs:
+        for (x, y) in toe_pads(leg[1], leg[2]):
+            shapes.append(fill(circle(x, y, 1.55 + extra / 2), BODY_DARK if outline else TOE))
+    return shapes
+
+
 def body_shapes(outline):
-    """Body parts as one silhouette. outline=True gives the dark outline pass (wider strokes)."""
+    """Body parts (without the front legs, which hold the die) as one silhouette. outline=True gives the dark
+    outline pass (wider strokes)."""
     extra = OUTLINE_W if outline else 0
     color = BODY_DARK if outline else BODY
     shapes = []
     for d, w in TAIL:
         shapes.append(stroke(d, color, w + extra))
-    for leg in all_legs():
-        shapes.append(stroke(polyline(leg), color, LEG_W + extra))
-    for leg in all_legs():
-        for (x, y) in toe_pads(leg[1], leg[2]):
-            r = 1.55 + extra / 2
-            shapes.append(fill(circle(x, y, r), BODY_DARK if outline else TOE))
+    shapes += leg_shapes(back_legs(), outline)
     shapes.append(fill(ellipse(*TORSO[:2], TORSO[2] + extra / 2, TORSO[3] + extra / 2), color))
     shapes.append(fill(ellipse(54, 45.5, 4.6 + extra / 2, 4.5 + extra / 2), color))  # neck
     shapes.append(fill(ellipse(*HEAD[:2], HEAD[2] + extra / 2, HEAD[3] + extra / 2), color))
+    return shapes
+
+
+def d6():
+    """A d6 held against the belly: the front face with five pips, plus a sliver of its top and right faces."""
+    cx, cy = DIE_CENTER
+    h, d = DIE_HALF, DIE_DEPTH
+    x0, y0, x1, y1 = cx - h, cy - h, cx + h, cy + h
+    top = polyline([(x0, y0), (x0 + d, y0 - d), (x1 + d, y0 - d), (x1, y0)]) + " Z"
+    side = polyline([(x1, y0), (x1 + d, y0 - d), (x1 + d, y1 - d), (x1, y1)]) + " Z"
+    r = 1.8
+    front = (
+        f"M{x0 + r:.2f},{y0:.2f} L{x1 - r:.2f},{y0:.2f} Q{x1:.2f},{y0:.2f} {x1:.2f},{y0 + r:.2f} "
+        f"L{x1:.2f},{y1 - r:.2f} Q{x1:.2f},{y1:.2f} {x1 - r:.2f},{y1:.2f} L{x0 + r:.2f},{y1:.2f} "
+        f"Q{x0:.2f},{y1:.2f} {x0:.2f},{y1 - r:.2f} L{x0:.2f},{y0 + r:.2f} Q{x0:.2f},{y0:.2f} {x0 + r:.2f},{y0:.2f} Z"
+    )
+    shapes = [
+        fill(top, DIE_TOP),
+        stroke(top, DIE_EDGE, 1.2, mono=0),
+        fill(side, DIE_SIDE),
+        stroke(side, DIE_EDGE, 1.2, mono=0),
+        fill(front, DIE),
+        stroke(front, DIE_EDGE, 1.4, mono=0),
+    ]
+    p = h * 0.52
+    for (px, py) in [(cx - p, cy - p), (cx + p, cy - p), (cx, cy), (cx - p, cy + p), (cx + p, cy + p)]:
+        shapes.append(fill(circle(px, py, 1.7), PIP, mono=0))
     return shapes
 
 
@@ -183,6 +230,10 @@ def foreground():
     # Blush cheeks.
     for cx in (48.4, 59.6):
         shapes.append(fill(ellipse(cx, 40.2, 1.5, 0.9), "#FF9FB3", alpha=0.75, mono=0))
+    # The d6 in front of the belly, then the front legs over it so the paws hug its sides.
+    shapes += d6()
+    shapes += [dict(s, mono=0) for s in leg_shapes(front_legs(), outline=True)]
+    shapes += leg_shapes(front_legs(), outline=False)
     return shapes
 
 
@@ -225,7 +276,7 @@ def vector_xml(shapes, mono=False, scale=1.0):
     if scale != 1.0:
         lines.append(
             f'    <group android:pivotX="54" android:pivotY="54" '
-            f'android:scaleX="{scale}" android:scaleY="{scale}">'
+            f'android:scaleX="{scale}" android:scaleY="{scale}" android:translateY="{FG_SHIFT_Y * scale:.2f}">'
         )
         indent = "        "
     for s in shapes:
@@ -258,7 +309,7 @@ def svg(shapes, size=108, fg_from=None):
     out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 108 108">']
     for i, s in enumerate(shapes):
         if fg_from is not None and i == fg_from:
-            out.append(f'<g transform="translate(54 54) scale({FG_SCALE}) translate(-54 -54)">')
+            out.append(f'<g transform="translate(54 {54 + FG_SHIFT_Y * FG_SCALE}) scale({FG_SCALE}) translate(-54 -54)">')
         a = s["alpha"]
         if s["fill"]:
             out.append(f'<path d="{s["d"]}" fill="{s["fill"]}" fill-opacity="{a}"/>')

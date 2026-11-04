@@ -31,9 +31,9 @@ class AppSettingsRepositoryTest {
 
         repository.setThemeId("cyberpunk")
         repository.setDarkMode(DarkMode.LIGHT)
-        repository.setDynamicColor(false)
+        repository.setDynamicColor(true)
         assertEquals(
-            AppSettings(animationsEnabled = false, quickRoll = true, themeId = "cyberpunk", darkMode = DarkMode.LIGHT, dynamicColor = false),
+            AppSettings(animationsEnabled = false, quickRoll = true, themeId = "cyberpunk", darkMode = DarkMode.LIGHT, dynamicColor = true),
             repository.settings.first(),
         )
     }
