@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.skrypko.dicefamiliar.domain.settings.DarkMode
+import com.skrypko.dicefamiliar.domain.settings.LanNotifications
 import com.skrypko.dicefamiliar.domain.settings.AppSettings
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -23,6 +24,9 @@ interface AppSettingsRepository {
     suspend fun setThemeId(id: String)
     suspend fun setDarkMode(mode: DarkMode)
     suspend fun setDynamicColor(enabled: Boolean)
+    suspend fun setLanEnabled(enabled: Boolean)
+    suspend fun setLanTransport(id: String)
+    suspend fun setLanNotifications(mode: LanNotifications)
 }
 
 @Singleton
@@ -41,6 +45,10 @@ class DataStoreAppSettingsRepository @Inject constructor(
             darkMode = prefs[DARK_MODE]?.let { name -> DarkMode.entries.firstOrNull { it.name == name } }
                 ?: defaults.darkMode,
             dynamicColor = prefs[DYNAMIC_COLOR] ?: defaults.dynamicColor,
+            lanEnabled = prefs[LAN_ENABLED] ?: defaults.lanEnabled,
+            lanTransport = prefs[LAN_TRANSPORT] ?: defaults.lanTransport,
+            lanNotifications = prefs[LAN_NOTIFICATIONS]?.let { name -> LanNotifications.entries.firstOrNull { it.name == name } }
+                ?: defaults.lanNotifications,
         )
     }.distinctUntilChanged()
 
@@ -55,6 +63,13 @@ class DataStoreAppSettingsRepository @Inject constructor(
         dataStore.edit { it[DARK_MODE] = mode.name }
     }
     override suspend fun setDynamicColor(enabled: Boolean) = set(DYNAMIC_COLOR, enabled)
+    override suspend fun setLanEnabled(enabled: Boolean) = set(LAN_ENABLED, enabled)
+    override suspend fun setLanTransport(id: String) {
+        dataStore.edit { it[LAN_TRANSPORT] = id }
+    }
+    override suspend fun setLanNotifications(mode: LanNotifications) {
+        dataStore.edit { it[LAN_NOTIFICATIONS] = mode.name }
+    }
 
     private suspend fun set(key: Preferences.Key<Boolean>, value: Boolean) {
         dataStore.edit { it[key] = value }
@@ -68,5 +83,8 @@ class DataStoreAppSettingsRepository @Inject constructor(
         val THEME = stringPreferencesKey("settings.theme")
         val DARK_MODE = stringPreferencesKey("settings.dark_mode")
         val DYNAMIC_COLOR = booleanPreferencesKey("settings.dynamic_color")
+        val LAN_ENABLED = booleanPreferencesKey("settings.lan_enabled")
+        val LAN_TRANSPORT = stringPreferencesKey("settings.lan_transport")
+        val LAN_NOTIFICATIONS = stringPreferencesKey("settings.lan_notifications")
     }
 }

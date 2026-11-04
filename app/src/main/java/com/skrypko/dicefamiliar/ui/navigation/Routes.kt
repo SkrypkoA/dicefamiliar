@@ -36,3 +36,11 @@ data class PoolEditRoute(val poolId: Long = 0L)
 /** Pick screen of one pool. Shown under the Pool tab. */
 @Serializable
 data class PoolPickRoute(val poolId: Long)
+
+/** LAN play tab (shown when LAN mode is on in Settings). */
+@Serializable
+data object LanRoute
+
+/** Host: the dice screen in request mode for one player. Shown under the LAN tab. */
+@Serializable
+data class LanRequestRoute(val playerId: String)

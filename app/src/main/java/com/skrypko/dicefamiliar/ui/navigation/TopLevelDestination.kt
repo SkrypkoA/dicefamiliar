@@ -1,5 +1,6 @@
 package com.skrypko.dicefamiliar.ui.navigation
 
+import androidx.compose.material.icons.filled.Wifi
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -23,6 +24,8 @@ enum class TopLevelDestination(
     POOL(PoolListRoute, PoolListRoute::class, Icons.AutoMirrored.Filled.List, R.string.tab_pool),
     DICE(DiceRoute, DiceRoute::class, Icons.Filled.Casino, R.string.tab_dice),
     CARDS(CardsRoute, CardsRoute::class, Icons.Filled.Style, R.string.tab_cards),
+    /** Shown only with LAN play switched on in Settings. */
+    LAN(LanRoute, LanRoute::class, Icons.Filled.Wifi, R.string.tab_lan),
     SETTINGS(SettingsRoute, SettingsRoute::class, Icons.Filled.Settings, R.string.settings_title),
 }
 
@@ -34,6 +37,7 @@ fun TopLevelDestination.themedIcon(): ImageVector = LocalThemeStyle.current.icon
         TopLevelDestination.POOL -> icons.pool
         TopLevelDestination.DICE -> icons.dice
         TopLevelDestination.CARDS -> icons.cards
+        TopLevelDestination.LAN -> icons.lan
         TopLevelDestination.SETTINGS -> icons.settings
     }
 }

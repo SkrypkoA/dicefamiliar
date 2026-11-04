@@ -9,7 +9,12 @@ import kotlinx.serialization.Serializable
 
 /** Request payload; [notation] is the wire format and is re-parsed by the device that rolls. */
 @Serializable
-data class DiceRollPayload(val notation: String, val mode: RollMode = RollMode.NORMAL)
+data class DiceRollPayload(
+    val notation: String,
+    val mode: RollMode = RollMode.NORMAL,
+    /** Roll as a dice pool (one die type, successes) rather than a sum; optional, so `dice.roll` v1 stays compatible. */
+    val pool: Boolean = false,
+)
 
 @Serializable
 data class DiceRollResult(val outcome: RollOutcome)

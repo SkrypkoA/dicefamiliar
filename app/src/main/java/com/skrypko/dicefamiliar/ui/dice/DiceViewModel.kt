@@ -1,6 +1,13 @@
 package com.skrypko.dicefamiliar.ui.dice
 
 import androidx.lifecycle.ViewModel
+import com.skrypko.dicefamiliar.domain.lan.LanRollState
+import com.skrypko.dicefamiliar.domain.lan.LanRollEntry
+import com.skrypko.dicefamiliar.data.lan.NoLan
+import com.skrypko.dicefamiliar.data.lan.LanState
+import com.skrypko.dicefamiliar.data.lan.LanNavigation
+import com.skrypko.dicefamiliar.data.lan.LanDiceGateway
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.skrypko.dicefamiliar.data.dice.DiceSetRepository
 import com.skrypko.dicefamiliar.data.dice.DiceStateRepository
@@ -53,6 +60,9 @@ data class RollRecord(
     val pool: PoolRollInfo? = null,
 )
 
+/** A host's request to this player: roll [notation] (as a pool when [pool]). */
+data class IncomingRoll(val id: String, val from: Participant, val notation: String, val mode: RollMode, val pool: Boolean)
+
 /** What a dice pool roll did. */
 enum class PoolRollKind {
     /** The whole pool from the panel formula. */
@@ -100,7 +110,17 @@ data class DiceUiState(
     val poolGroups: PoolGroups = PoolGroups(),
     /** The "How many" field in pool mode, as typed. */
     val poolCountText: String = "",
+    /** LAN host: this screen asks [requestTarget] to roll instead of rolling (Send instead of Roll). */
+    val requestTarget: Participant? = null,
+    /** LAN host: the request was sent and the player hasn't rolled yet. */
+    val awaitingReply: Boolean = false,
+    /** LAN player: a host's pending request (shown as a banner). */
+    val incoming: IncomingRoll? = null,
+    /** LAN player: the request being rolled now; the panel is locked to its dice. */
+    val activeRequest: IncomingRoll? = null,
 ) {
+    val requestMode: Boolean get() = requestTarget != null
+
     val canRoll: Boolean get() = !isRolling && notation.isNotBlank() && notationError == null
 
     /** The selected group's criterion, if any. */
@@ -132,7 +152,19 @@ class DiceViewModel @Inject constructor(
     private val participants: ParticipantRepository,
     private val soundPlayer: SoundPlayer,
     private val diceSets: DiceSetRepository,
+    savedStateHandle: SavedStateHandle,
+    private val lan: LanDiceGateway = NoLan,
+    private val lanNavigation: LanNavigation = LanNavigation(),
 ) : ViewModel() {
+
+    /** Set on the host's request screen (`LanRequestRoute`): the player to ask. */
+    private val targetId: String? = savedStateHandle.get<String>(ARG_PLAYER_ID)
+
+    /** The request whose result was last shown on the host's request screen. */
+    private var revealedRequestId: String? = null
+
+    /** The player's own formula and mode while a request locks the panel; restored afterwards. */
+    private var ownBeforeRequest: Triple<String, Boolean, String>? = null
 
     private val _uiState = MutableStateFlow(DiceUiState())
     val uiState: StateFlow<DiceUiState> = _uiState.asStateFlow()
@@ -143,6 +175,19 @@ class DiceViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             settingsRepository.settings.collect { settings -> _uiState.update { it.copy(settings = settings) } }
+        }
+        if (targetId != null) {
+            viewModelScope.launch { lan.state.collect { onHostState(it, targetId) } }
+        } else {
+            viewModelScope.launch { lan.state.collect { onPlayerState(it) } }
+            viewModelScope.launch {
+                lanNavigation.openRequest.collect { open ->
+                    if (open && _uiState.value.incoming != null) {
+                        openRequest()
+                        lanNavigation.consumed()
+                    }
+                }
+            }
         }
         viewModelScope.launch {
             diceSets.activeSkin.collect { skin -> _uiState.update { it.copy(skin = skin) } }
@@ -191,12 +236,12 @@ class DiceViewModel @Inject constructor(
     /** Switches between summing a formula and the dice pool; each mode keeps its own formula. */
     fun setPoolMode(enabled: Boolean) {
         val state = _uiState.value
-        if (state.poolMode == enabled || state.isRolling) return
+        if (state.poolMode == enabled || state.isRolling || state.activeRequest != null) return
         val next = otherNotation
         otherNotation = state.notation
         _uiState.update { it.copy(poolMode = enabled, latest = null, pending = null) }
         setNotation(next, persist = false)
-        viewModelScope.launch { stateRepository.savePoolMode(enabled) }
+        if (targetId == null) viewModelScope.launch { stateRepository.savePoolMode(enabled) }
     }
 
     /** Pool mode "How many" field: digits only; a valid number sets the pool size (1–100). */
@@ -286,6 +331,14 @@ class DiceViewModel @Inject constructor(
     fun roll(flingSpeed: Float = 0f) {
         val state = _uiState.value
         if (state.isRolling) return
+        if (state.requestMode) {
+            sendRequest()
+            return
+        }
+        if (state.activeRequest != null) {
+            rollRequest(state.activeRequest, flingSpeed)
+            return
+        }
         if (state.poolMode) {
             // With a group selected, a swipe (or Roll) rolls only that group's dice, in place.
             if (state.selectedCriterion != null && state.pool != null) {
@@ -370,8 +423,165 @@ class DiceViewModel @Inject constructor(
         }
     }
 
+    // --- LAN: host request screen ---------------------------------------------------------------
+
+    /** Sends the current dice to the target player instead of rolling them. */
+    private fun sendRequest() {
+        val state = _uiState.value
+        val target = state.requestTarget ?: return
+        val valid = if (state.poolMode) PoolNotation.parse(state.notation) != null else DiceNotationParser.parse(state.notation) is ParseResult.Success
+        if (!valid || state.awaitingReply) {
+            _events.trySend(DiceEvent.InvalidRoll)
+            return
+        }
+        val mode = if (!state.poolMode && state.modeApplicable) state.mode else RollMode.NORMAL
+        viewModelScope.launch {
+            if (!lan.sendRoll(target.id, DiceRollPayload(state.notation, mode, pool = state.poolMode))) _events.trySend(DiceEvent.InvalidRoll)
+        }
+    }
+
+    private suspend fun onHostState(lanState: LanState, playerId: String) {
+        val player = lanState.players.firstOrNull { it.participant.id == playerId }?.participant
+        val me = lanState.me
+        val entries = lanState.log(playerId)
+        val rolled = entries.filter { it.state == LanRollState.ROLLED && it.outcome != null }.map { it.toRecord(me, player) }
+        val newest = entries.firstOrNull()
+        _uiState.update {
+            it.copy(
+                requestTarget = player ?: it.requestTarget,
+                awaitingReply = newest?.state == LanRollState.REQUESTED,
+                recent = rolled.take(MAX_RECENT),
+            )
+        }
+        val result = newest?.takeIf { it.state == LanRollState.ROLLED && it.outcome != null } ?: return
+        if (result.requestId == revealedRequestId) return
+        val first = revealedRequestId == null && _uiState.value.latest == null && rolled.size > 1
+        revealedRequestId = result.requestId
+        val record = result.toRecord(me, player)
+        val pool = result.outcome!!.let { outcome ->
+            if (result.pool) outcome.groups.firstOrNull()?.let { DicePool.of(it.term.sides, it.dice.map { die -> die.value }) } else null
+        }
+        if (first) {
+            _uiState.update { it.copy(latest = record, pool = pool ?: it.pool) }
+        } else {
+            _uiState.update { it.copy(isRolling = true) }
+            reveal(record, 0f, addToRecent = false) { it.copy(pool = pool ?: it.pool) }
+        }
+    }
+
+    private fun LanRollEntry.toRecord(me: Participant?, player: Participant?): RollRecord {
+        val outcome = outcome!!
+        val pool = if (this.pool) {
+            outcome.groups.firstOrNull()?.let { DicePool.of(it.term.sides, it.dice.map { die -> die.value }) }
+        } else {
+            null
+        }
+        return RollRecord(
+            id = requestId,
+            notation = outcome.expression.toNotation(),
+            mode = RollMode.NORMAL,
+            label = null,
+            outcome = outcome,
+            requestedBy = me ?: this.player,
+            rolledBy = player ?: this.player,
+            rolledAt = requestedAt,
+            pool = pool?.let { PoolRollInfo(PoolRollKind.ROLL, null, it, null) },
+        )
+    }
+
+    // --- LAN: player -----------------------------------------------------------------------------
+
+    private fun onPlayerState(lanState: LanState) {
+        val request = lanState.incoming
+        val incoming = request?.let { r ->
+            lan.payloadOf(r)?.let { IncomingRoll(r.id, r.from, it.notation, it.mode, it.pool) }
+        }
+        _uiState.update { it.copy(incoming = incoming) }
+        // The host cancelled (or replaced) the request that locks the panel.
+        val active = _uiState.value.activeRequest
+        if (active != null && incoming?.id != active.id && !_uiState.value.isRolling) restoreOwnDice()
+        if (incoming != null && lanNavigation.openRequest.value) {
+            openRequest()
+            lanNavigation.consumed()
+        }
+    }
+
+    /** Locks the panel to the pending request's dice (from the banner, the LAN tab or a notification). */
+    fun openRequest() {
+        val state = _uiState.value
+        val incoming = state.incoming ?: return
+        if (state.activeRequest?.id == incoming.id || state.isRolling) return
+        if (state.activeRequest == null) ownBeforeRequest = Triple(state.notation, state.poolMode, otherNotation)
+        _uiState.update { it.copy(activeRequest = incoming, poolMode = incoming.pool, panelVisible = true, pool = null, latest = null) }
+        setNotation(incoming.notation, persist = false)
+    }
+
+    /** Refuses the pending request. */
+    fun declineRequest() {
+        val incoming = _uiState.value.incoming ?: _uiState.value.activeRequest ?: return
+        viewModelScope.launch { lan.decline(incoming.id) }
+        restoreOwnDice()
+    }
+
+    private fun rollRequest(request: IncomingRoll, flingSpeed: Float) {
+        _uiState.update { it.copy(isRolling = true) }
+        viewModelScope.launch {
+            val answer = lan.respond(request.id)
+            val outcome = answer?.second
+            if (answer == null || outcome !is ActionOutcome.Completed) {
+                _uiState.update { it.copy(isRolling = false) }
+                restoreOwnDice()
+                if (answer != null) _events.trySend(DiceEvent.InvalidRoll)
+                return@launch
+            }
+            val rolled = outcome.result.outcome
+            val pool = if (request.pool) {
+                rolled.groups.firstOrNull()?.let { DicePool.of(it.term.sides, it.dice.map { die -> die.value }) }
+            } else {
+                null
+            }
+            val record = RollRecord(
+                id = answer.first.id,
+                notation = rolled.expression.toNotation(),
+                mode = request.mode,
+                label = request.from.name,
+                outcome = rolled,
+                requestedBy = answer.first.from,
+                rolledBy = outcome.response.respondedBy,
+                rolledAt = outcome.response.respondedAt,
+                pool = pool?.let { PoolRollInfo(PoolRollKind.ROLL, null, it, null) },
+            )
+            reveal(record, flingSpeed) { it.copy(pool = pool ?: it.pool) }
+            restoreOwnDice(keepResult = true)
+        }
+    }
+
+    /** Back to the player's own formula and mode after a request (the result stays on screen when [keepResult]). */
+    private fun restoreOwnDice(keepResult: Boolean = false) {
+        val (notation, poolMode, other) = ownBeforeRequest ?: run {
+            _uiState.update { it.copy(activeRequest = null) }
+            return
+        }
+        ownBeforeRequest = null
+        otherNotation = other
+        _uiState.update {
+            it.copy(
+                activeRequest = null,
+                poolMode = poolMode,
+                latest = if (keepResult) it.latest else null,
+                pool = if (keepResult && poolMode) it.pool else null,
+            )
+        }
+        setNotation(notation, persist = false)
+    }
+
     /** Plays the sound and the tumble (when animations are on), then shows [record]. */
-    private suspend fun reveal(record: RollRecord, flingSpeed: Float, extra: (DiceUiState) -> DiceUiState = { it }) {
+    private suspend fun reveal(
+        record: RollRecord,
+        flingSpeed: Float,
+        addToRecent: Boolean = true,
+        extra: (DiceUiState) -> DiceUiState = { it },
+    ) {
         val settings = _uiState.value.settings
         if (settings.soundsEnabled) soundPlayer.play(Sound.DICE_ROLL)
         if (settings.animationsEnabled) {
@@ -385,7 +595,7 @@ class DiceViewModel @Inject constructor(
                     isRolling = false,
                     pending = null,
                     latest = record,
-                    recent = (listOf(record) + it.recent).take(MAX_RECENT),
+                    recent = if (addToRecent) (listOf(record) + it.recent).take(MAX_RECENT) else it.recent,
                     rollCount = it.rollCount + if (settings.animationsEnabled) 0 else 1,
                 ),
             )
@@ -417,12 +627,15 @@ class DiceViewModel @Inject constructor(
                 poolCountText = PoolNotation.parse(text)?.first?.toString().orEmpty(),
             )
         }
-        if (persist) {
+        if (persist && targetId == null && _uiState.value.activeRequest == null) {
             viewModelScope.launch { if (poolMode) stateRepository.savePoolNotation(text) else stateRepository.saveNotation(text) }
         }
     }
 
     companion object {
+        /** The [com.skrypko.dicefamiliar.ui.navigation.LanRequestRoute] argument. */
+        const val ARG_PLAYER_ID = "playerId"
+
         /** Palette key for the dN (custom die) button. */
         const val CUSTOM_DIE = 0
         const val MAX_RECENT = 20

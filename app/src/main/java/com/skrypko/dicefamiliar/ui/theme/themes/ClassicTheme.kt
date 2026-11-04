@@ -1,5 +1,6 @@
 package com.skrypko.dicefamiliar.ui.theme.themes
 
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Casino
@@ -42,6 +43,7 @@ val ClassicTheme = AppThemeSpec(
         dice = Icons.Filled.Casino,
         cards = Icons.Filled.Style,
         settings = Icons.Filled.Settings,
+        lan = Icons.Filled.Wifi,
         roll = Icons.Filled.Casino,
         generate = Icons.Filled.Casino,
     ),

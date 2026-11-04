@@ -146,7 +146,20 @@ fun DiceTray(
         Box(Modifier.fillMaxSize().padding(12.dp), contentAlignment = Alignment.Center) {
             val shown = state.pending ?: state.latest
             val pool = state.pool
+            val target = state.requestTarget
             when {
+                target != null && state.awaitingReply && state.pending == null -> Text(
+                    stringResource(R.string.lan_waiting_for, target.name),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = trayColors().muted,
+                    textAlign = TextAlign.Center,
+                )
+                target != null && shown == null && (!state.poolMode || pool == null) -> Text(
+                    stringResource(R.string.lan_request_empty, target.name),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = trayColors().muted,
+                    textAlign = TextAlign.Center,
+                )
                 // Up to 12 dice stay 3D after the roll (Quick roll off); bigger pools and Quick roll use the flat grid.
                 state.poolMode && state.pending == null && pool != null && !state.settings.quickRoll && pool.size <= MAX_3D_DICE ->
                     PoolSolidDice(state, pool)

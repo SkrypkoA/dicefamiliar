@@ -76,6 +76,11 @@ class FakeAppSettingsRepository(initial: AppSettings = AppSettings()) : AppSetti
     override suspend fun setThemeId(id: String) { state.value = state.value.copy(themeId = id) }
     override suspend fun setDarkMode(mode: DarkMode) { state.value = state.value.copy(darkMode = mode) }
     override suspend fun setDynamicColor(enabled: Boolean) { state.value = state.value.copy(dynamicColor = enabled) }
+    override suspend fun setLanEnabled(enabled: Boolean) { state.value = state.value.copy(lanEnabled = enabled) }
+    override suspend fun setLanTransport(id: String) { state.value = state.value.copy(lanTransport = id) }
+    override suspend fun setLanNotifications(mode: com.skrypko.dicefamiliar.domain.settings.LanNotifications) {
+        state.value = state.value.copy(lanNotifications = mode)
+    }
 }
 
 class FakeDiceStateRepository(var state: DiceState = DiceState()) : DiceStateRepository {
@@ -102,9 +107,10 @@ class FakeNumberStateRepository(var state: NumberState = NumberState()) : Number
     override suspend fun savePanelVisible(visible: Boolean) { state = state.copy(panelVisible = visible) }
 }
 
-class FakeParticipantRepository(private val self: Participant = Participant("me", "My phone")) :
+class FakeParticipantRepository(private var self: Participant = Participant("me", "My phone")) :
     ParticipantRepository {
     override suspend fun self(): Participant = self
+    override suspend fun rename(name: String) { self = self.copy(name = name.trim()) }
 }
 
 class FakeSoundPlayer : SoundPlayer {

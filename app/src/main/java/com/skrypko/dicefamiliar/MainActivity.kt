@@ -1,7 +1,9 @@
 package com.skrypko.dicefamiliar
 
 import android.graphics.Color
+import android.content.Intent
 import android.os.Bundle
+import com.skrypko.dicefamiliar.data.lan.LanNavigation
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -22,8 +24,12 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var settingsRepository: AppSettingsRepository
 
+    @Inject
+    lateinit var lanNavigation: LanNavigation
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleLanIntent(intent)
         enableEdgeToEdge()
         setContent {
             // Wait for the saved theme (a few ms) so the app doesn't flash the wrong colours.
@@ -43,6 +49,19 @@ class MainActivity : ComponentActivity() {
             DiceFamiliarTheme(themeId = current.themeId, darkMode = current.darkMode, dynamicColor = current.dynamicColor) {
                 AppNavHost()
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleLanIntent(intent)
+    }
+
+    /** A tap on a roll-request notification opens the Dice tab with the request. */
+    private fun handleLanIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra(LanNavigation.EXTRA_OPEN_REQUEST, false) == true) {
+            intent.removeExtra(LanNavigation.EXTRA_OPEN_REQUEST)
+            lanNavigation.requestOpened()
         }
     }
 }

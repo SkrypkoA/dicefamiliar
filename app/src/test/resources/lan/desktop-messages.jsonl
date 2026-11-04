@@ -1,0 +1,11 @@
+hello	{"t":"hello","participant":{"id":"desk-1","name":"Desk"},"version":1}
+welcome	{"t":"welcome","host":{"id":"desk-1","name":"Desk"},"players":[{"id":"phone-1","name":"Phone"}]}
+players	{"t":"players","players":[{"id":"phone-1","name":"Phone"}]}
+ping	{"t":"ping"}
+pong	{"t":"pong"}
+request	{"t":"request","request":{"id":"req-1","type":"dice.roll","version":1,"payload":{"notation":"3d6+2","mode":"NORMAL","pool":false},"label":null,"from":{"id":"desk-1","name":"Desk"},"to":{"id":"phone-1","name":"Phone"},"createdAt":1000}}
+cancel	{"t":"cancel","requestId":"req-1"}
+bye	{"t":"bye","reason":"LEFT"}
+response_rolled	{"t":"response","response":{"requestId":"req-2","status":"COMPLETED","payload":{"outcome":{"expression":{"terms":[{"type":"dice","count":2,"sides":6,"keep":{"type":"HIGHEST","count":1},"sign":"PLUS"},{"type":"dice","count":1,"sides":4,"keep":null,"sign":"PLUS"},{"type":"const","value":3,"sign":"MINUS"}]},"groups":[{"term":{"count":2,"sides":6,"keep":{"type":"HIGHEST","count":1},"sign":"PLUS"},"dice":[{"value":3,"kept":true},{"value":2,"kept":false}],"subtotal":3},{"term":{"count":1,"sides":4,"keep":null,"sign":"PLUS"},"dice":[{"value":4,"kept":true}],"subtotal":4}],"constant":-3,"total":4}},"errorCode":null,"respondedBy":{"id":"desk-1","name":"Desk"},"respondedAt":2000}}
+response_pool	{"t":"response","response":{"requestId":"req-3","status":"COMPLETED","payload":{"outcome":{"expression":{"terms":[{"type":"dice","count":6,"sides":6,"keep":null,"sign":"PLUS"}]},"groups":[{"term":{"count":6,"sides":6,"keep":null,"sign":"PLUS"},"dice":[{"value":2,"kept":true},{"value":3,"kept":true},{"value":4,"kept":true},{"value":2,"kept":true},{"value":2,"kept":true},{"value":6,"kept":true}],"subtotal":19}],"constant":0,"total":19}},"errorCode":null,"respondedBy":{"id":"desk-1","name":"Desk"},"respondedAt":3000}}
+response_declined	{"t":"response","response":{"requestId":"req-4","status":"DECLINED","payload":null,"errorCode":null,"respondedBy":{"id":"desk-1","name":"Desk"},"respondedAt":4000}}

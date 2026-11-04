@@ -116,6 +116,7 @@ fun SettingsScreen(
             onCreateDiceSet = viewModel::createDiceSet,
             onImportDiceSet = { importLauncher.launch(ZIP_MIME_TYPES) },
             cardsSection = { CardDecksSection(onMessage = { text -> scope.launch { snackbar.showSnackbar(text) } }) },
+            lanSection = { LanSection() },
         )
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
     }
@@ -139,6 +140,7 @@ fun SettingsContent(
     onCreateDiceSet: (String) -> Unit = {},
     onImportDiceSet: () -> Unit = {},
     cardsSection: @Composable () -> Unit = {},
+    lanSection: @Composable () -> Unit = {},
 ) {
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         SectionHeader(R.string.settings_section_appearance)
@@ -167,6 +169,9 @@ fun SettingsContent(
         HorizontalDivider(Modifier.padding(top = 8.dp))
         SectionHeader(R.string.settings_section_cards)
         cardsSection()
+        HorizontalDivider(Modifier.padding(top = 8.dp))
+        SectionHeader(R.string.settings_section_lan)
+        lanSection()
         Spacer(Modifier.size(24.dp))
     }
 }

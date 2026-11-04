@@ -78,8 +78,9 @@ app/src/main/java/com/skrypko/dicefamiliar/
 │   ├── dice/              # Dice model, notation parser, roller, NotationEditor, DiceRollAction
 │   ├── cards/             # CardFace, StandardCards, DeckPresets, CardTable; io/ = CSV + ZIP deck import
 │   ├── remote/            # Feature-agnostic remote actions (LAN-ready): envelopes, registry, codec
+│   ├── lan/               # LAN protocol (LanMessage), LanRollEntry, LanAddress
 │   └── settings/          # AppSettings (app-wide preferences)
-└── data/                  # DataStore / Room repositories (settings/, dice/, number/, cards/, pool/, remote/)
+└── data/                  # DataStore / Room repositories (settings/, dice/, number/, cards/, pool/, remote/); lan/ = session, service, notifications, transport/
 ```
 
 ## Core Rules
@@ -302,7 +303,32 @@ The display mode is worked out from the whole pool, not item by item. It applies
 
 ### Shared
 - **Settings** (`AppSettings`, DataStore): sounds, animations, haptic feedback (all on by default) and Quick roll (off). Settings is the fifth tab in the bottom navigation bar. The app has no top app bar and no screen titles, and it **reopens on the last selected tab** (`LastTabRepository` plus `NavigationViewModel`). New feature settings get their own section.
-- **Remote actions** (`domain/remote/`, feature-agnostic, for future LAN play): a feature defines a `RemoteAction<Req, Res>` (`type`, `version`, serializers), implements a `RemoteActionHandler`, and registers it with Hilt `@Provides @IntoSet fun ...(): RemoteActionHandler<*, *>`. `RemoteActionRegistry` dispatches `ActionRequest` → `ActionResponse` (unknown type, wrong version or malformed payload give `REJECTED`). Local actions use `LocalActionExecutor`, which takes the same path a LAN request will. `Participant` (a stable id per device) is the identity. Transport is not implemented yet.
+- **Remote actions** (`domain/remote/`, feature-agnostic, for future LAN play): a feature defines a `RemoteAction<Req, Res>` (`type`, `version`, serializers), implements a `RemoteActionHandler`, and registers it with Hilt `@Provides @IntoSet fun ...(): RemoteActionHandler<*, *>`. `RemoteActionRegistry` dispatches `ActionRequest` → `ActionResponse` (unknown type, wrong version or malformed payload give `REJECTED`). Local actions use `LocalActionExecutor`, which takes the same path a LAN request will. `Participant` (a stable id per device) is the identity; its name is editable (`ParticipantRepository.rename`).
+- **LAN play** (dice only so far; Settings → LAN play adds the LAN tab, `settings.lan_enabled`):
+  - **Transport is swappable:** `data/lan/transport/LanTransport` (discover hosts, host, connect; text lines). Hilt contributes every implementation with `@Provides @IntoSet fun ...(): LanTransport` (`di/LanModule`). `LanTransports` picks the one in `AppSettings.lanTransport` (default `wifi_nsd`). Settings shows a Connection picker only when a build ships more than one. To add Nearby Connections or a relay/middleware, write a `LanTransport` and one binding (a flavor module can do it per build); nothing else changes.
+  - **`WifiNsdTransport`:** NSD service `_dicefamiliar._tcp` (display name in the TXT record) + TCP, one JSON message per line (≤ 64 KB, `readCappedLine`). It listens on **47321** when free, so **Join by address** (`LanAddress.parse`, for VPNs like Tailscale/ZeroTier) needs only the IP. `localAddresses()` lists Wi-Fi and VPN (tun/wg/ppp/…) IPv4 addresses for the host screen.
+  - **Protocol (`domain/lan/LanProtocol`, version 1):**
+    - Messages: `Hello`, `Welcome`, `Players`, `Bye(reason)`, `Ping`/`Pong` (every 15 s; 45 s of silence = gone), `Request(ActionRequest)`, `Response(ActionResponse)`, `Cancel`.
+    - Feature work travels as the existing remote-action envelopes.
+    - Unknown or garbage lines are ignored. A version mismatch gets `Bye(VERSION_MISMATCH)`.
+  - **`LanSessionManager`** (the only class that touches the transport; unit-tested with `FakeLanTransport`):
+    - Exposes `LanState`: role, players (disconnected ones kept, greyed), per-player logs of `LanRollEntry` (requested/rolled/declined/cancelled/failed/disconnected), the player's `incoming` request, and the host's `port`.
+    - The host's `sendRoll(player, DiceRollPayload(notation, mode, pool))` cancels that player's older pending request.
+    - The player's `respond` runs the request through `RemoteActionRegistry.dispatch` (the device re-parses the notation as untrusted input and owns the randomness). `decline` refuses it.
+    - Anyone may join; the host can `kick`. Logs are in memory for the session.
+  - **The Dice screen talks to LAN only through `LanDiceGateway` (`NoLan` in tests).**
+    - **Host:** `LanRequestRoute(playerId)` opens `DiceScreen` in **request mode**. Roll becomes "Send to …", the swipe is off, and the tray shows "Waiting…" and then the player's result. History lists that player's rolls. The host's own formula is not saved.
+    - **Player:** an `IncomingRoll` banner. Roll locks the panel to the host's dice (`LockedRequestPanel`; Sum or Pool follows the request). The roll goes back to the host, then the player's own dice are restored.
+  - **Android:**
+    - `LanService` is a foreground service (`connectedDevice`) while hosting or playing, with a Leave action.
+    - `LanCoordinator` (started in `DiceFamiliarApp`) starts and stops it and posts request notifications when the app isn't visible (`AppVisibility`).
+    - `LanNotifier` uses channels `lan_session`, `lan_requests_alert` and `lan_requests_vibrate`. `AppSettings.lanNotifications` picks sound / vibration only / off, and there is a link to the system channel settings.
+    - A notification tap → `LanNavigation.openRequest` → Dice tab → the request opens.
+  - **The `dice.roll` v1 payload has an optional `pool` flag**, which keeps it compatible.
+  - **Desktop stand-in:** `tools/lan_desktop/dicefamiliar_lan.py` (Python stdlib, browser UI, avahi for mDNS) implements the same protocol as host or player, for testing without a second phone.
+    - **Keep it in step with `LanProtocol`, `DiceRollPayload`, `RollOutcome` and the dice rules.** After changing it, regenerate `app/src/test/resources/lan/` with `--write-fixtures`.
+    - `LanDesktopCompatTest` decodes those fixtures.
+    - `LanDesktopInteropTest` runs `LanSessionManager` (over `JvmTcpTransport`) against the tool live, in both roles; it is skipped without `python3`.
 - **Dice sets** (skins): `manifest.json` plus optional 2D images, 3D face textures and a font. Built-in sets are in `assets/dice_sets/<id>/` (only `default`); user sets are in `filesDir/dice_sets/<id>/` with the same layout. They are parsed and validated by `DiceSetValidator` (`domain/dice/skin`) and loaded by `DiceSetRepository` (`DefaultDiceSetRepository`) with per-field fallback. The active set id is in DataStore (`dice.active_set`) and the Dice tab follows it live.
   - **Settings → Dice sets:** a radio list to pick the active set, **Upload ZIP** (`OpenDocument`), **New set**, edit and delete (with confirmation), and a **"?"** help sheet with the requirements (`ui/settings/dicesets/DiceSetHelpSheet`).
   - **ZIP upload:** `DiceSetArchiveReader` (zip-slip check, ≤ 300 entries, ≤ 50 MB unpacked, images ≤ 10 MB, fonts ≤ 5 MB, other files skipped, optional single wrapper folder). `DiceSetConventions` matches `d6.png` / `2d/d6.png` / `3d/d6_face.png` / `fonts/*.ttf`: it builds the manifest when there is none and fills in what a manifest leaves out (explicit manifest fields win). `DiceSetIds` builds safe, unique ids: a clash with a built-in set gets a suffix, and a clash with a user set replaces it.
