@@ -19,8 +19,8 @@ data class AppSettings(
      */
     val themeId: String = DEFAULT_THEME_ID,
     val darkMode: DarkMode = DarkMode.SYSTEM,
-    /** Wallpaper-based colours on Android 12+, for themes that support them. */
-    val dynamicColor: Boolean = true,
+    /** Wallpaper-based colours on Android 12+, for themes that support them (off: the app's own logo colours). */
+    val dynamicColor: Boolean = false,
     /** LAN play: shows the LAN tab (host a table or join one). */
     val lanEnabled: Boolean = false,
     /** Id of the LAN transport (see `data/lan/transport/LanTransports`); unknown ids fall back to the default. */

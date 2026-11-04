@@ -161,7 +161,7 @@ Pick one in **Settings → Appearance**. Each card shows a small preview of the 
 
 | Theme | Look |
 |---|---|
-| **Classic** | Clean Material design. Light, dark or following the system, with wallpaper colours on Android 12+. |
+| **Classic** | The app's own colours from the logo (violet, gecko green, gold) on light lavender. Light, dark or following the system; wallpaper colours on Android 12+ are optional (off by default). |
 | **Tavern** | Warm fantasy. Parchment and leather, gold trim, serif titles, and bone dice rolled on **green billiard cloth** framed in wood. Its icons are a magic wand, a treasure chest and a spellbook. |
 | **Cyberpunk** | Bright neon on black. Cyan, magenta and yellow, monospace type, cut corners, and dice on a **glowing neon grid**. Its icons are a chip, storage, a terminal and a bolt. |
 
@@ -436,7 +436,7 @@ Generators for the app's assets. Run them from the repository root with Python 3
 | `tools/gen_card_examples.py` | example decks in `docs/card-examples/` | Python 3 + Pillow |
 | `tools/gen_pool_examples.py` | example pools in `docs/pool-examples/` (`classes.zip`, `drinks.csv`, `classes-preview.png`) | Python 3 + Pillow |
 | `tools/lan_desktop/dicefamiliar_lan.py` | a desktop LAN stand-in (host or player) for testing LAN play; `--self-test`, `--write-fixtures app/src/test/resources/lan` | Python 3 (+ avahi tools, optional) |
-| `tools/gen_app_icon.py` | the adaptive launcher icon in `res/drawable/` | Python 3 |
+| `tools/gen_app_icon.py` | the adaptive launcher icon in `res/drawable/` (the fairy gecko hugging a d6) | Python 3 |
 | `tools/render_legacy_icons.sh` | legacy launcher PNGs for API 24–25 in `res/mipmap-*/` | Python 3 + ImageMagick 7 (`magick`) |
 
 **Dice-set templates** (after changing a die shape in `DiceShapes.kt` or `DieModel.kt`, update the tables in the script first):

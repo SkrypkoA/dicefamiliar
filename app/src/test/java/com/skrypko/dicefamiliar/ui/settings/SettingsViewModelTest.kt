@@ -17,6 +17,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -60,11 +61,11 @@ class SettingsViewModelTest {
 
         vm.setTheme("tavern")
         vm.setDarkMode(DarkMode.DARK)
-        vm.setDynamicColor(false)
+        vm.setDynamicColor(true)
 
         assertEquals("tavern", vm.settings.value.themeId)
         assertEquals(DarkMode.DARK, vm.settings.value.darkMode)
-        assertFalse(vm.settings.value.dynamicColor)
+        assertTrue(vm.settings.value.dynamicColor)
     }
 
     @Test
